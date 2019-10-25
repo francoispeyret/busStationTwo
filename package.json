@@ -1,0 +1,25 @@
+{
+  "name": "bus-station-tree",
+  "version": "1.0.0",
+  "description": "BusStation rework with three.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "echo 'Starting Webpack dev server! \n' && webpack-dev-server",
+    "build": "echo 'Starting Webpack building! \n' && webpack-cli --config webpack.config.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.6.4",
+    "@babel/preset-env": "^7.6.3",
+    "babel-loader": "^8.0.6",
+    "resolve-dir": "^1.0.1",
+    "webpack": "^4.41.1",
+    "webpack-cli": "^3.3.9",
+    "webpack-dev-server": "^3.8.2"
+  },
+  "dependencies": {
+    "three": "^0.109.0"
+  }
+}
