@@ -1,14 +1,17 @@
 import * as THREE from 'three';
 import Bus from './world/bus.js';
+import Road from './world/road.js';
+import Spawner from './utils/spawner.js';
 
-const scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 );
-camera.position.set(0,25,30);
+let scene = new THREE.Scene();
+scene.fog = new THREE.Fog( 0x59472b, 1000, 3000 );
+let camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 10, 3000 );
+camera.position.set(0,350,450);
 camera.lookAt(new THREE.Vector3(0,0,0));
 
 let renderer = new THREE.WebGLRenderer();
 renderer.setClearColor(0x000000, 1);
-renderer.setPixelRatio(2);
+renderer.setPixelRatio(1);
 renderer.gammaOutPut = true;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -19,70 +22,71 @@ window.onresize = () => {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 };
 
-let roadGem = new THREE.PlaneGeometry( 15, 500 );
-let roadMat = new THREE.MeshPhongMaterial( { color: 0x333333 } );
-let road = new THREE.Mesh( roadGem, roadMat );
-road.castShadow = false; //default is false
-road.receiveShadow = true; //default
-scene.add( road );
+let light = new THREE.SpotLight( 0xffffff, 1, 0, Math.PI / 5, 0.3 );
+light.position.set( 1500, 1500, 0 );
+light.target.position.set( 0, 0, 0 );
+light.castShadow = true;
+light.shadow.radius = 0.5;
+light.shadow.camera.near = 500;
+light.shadow.camera.far = 2500;
+light.shadow.bias = 0.0001;
+light.shadow.mapSize.width = 4096;
+light.shadow.mapSize.height = 4096;
+scene.add( light );
 
-let grassGem = new THREE.PlaneGeometry( 300, 500 );
-let grassMat = new THREE.MeshPhongMaterial( { color: 0xafff45 } );
-let grass = new THREE.Mesh( grassGem, grassMat );
-grass.castShadow = false; //default is false
-grass.receiveShadow = true; //default
-grass.rotation.x = -1.5708;
-grass.position.set(0,-1,0);
-scene.add( grass );
-//camera.rotation.x = 1;
-road.position.set(0,0,0);
-road.rotation.x = -1.5708;
+let ambientLight = new THREE.AmbientLight( 0x115099 ); // soft white light
+
+ambientLight.intensity = 0.5;
+
+scene.add( ambientLight );
+
+let road = new Road();
+scene.add( road.container );
+
 
 let bus = new Bus();
 scene.add( bus.container );
 
-let light = new THREE.DirectionalLight( 0xffffff, 1, 100 );
-light.position.set( 0, 1, -1);
-light.castShadow = true;
-light.shadow.radius = 10;
-scene.add( light );
+let spawner = new Spawner(scene);
 
-let ambientLight = new THREE.AmbientLight( 0x404040 ); // soft white light
 
-scene.add( ambientLight );
-
+let clock = new THREE.Clock();
+let delta = 0;
+// 30 fps
+let interval = 1 / 60;
 
 function animate() {
 	requestAnimationFrame( animate );
-	renderer.render( scene, camera );
+	delta += clock.getDelta();
+	if (delta  > interval) {
+		spawner.animate(bus);
+	 	bus.animate();
+	 	road.animate(bus.vel.value);
+	 	renderer.render( scene, camera );
+		delta = delta % interval;
+   }
 }
 animate();
 
 
 let   controlLoop      = null;
-const controlLoopSpeed = 7;
 window.onkeydown = function(e) {
-	e.preventDefault();
-	e.stopPropagation();
-	console.log(e);
 	if(typeof bus == 'object') {
 		clearInterval(controlLoop);
 		if(e.code === 'ArrowLeft') {
 			controlLoop = setInterval(function () {
 				bus.turnLeft();
-			}, controlLoopSpeed);
+			}, 1);
 		}
 		if(e.code === 'ArrowRight') {
 			controlLoop = setInterval(function () {
 				bus.turnRight();
-			}, controlLoopSpeed);
+			}, 1);
 		}
 	}
 };
 
 window.onkeyup = function(e) {
-	e.preventDefault();
-	e.stopPropagation();
 	if(typeof bus == 'object') {
 		clearInterval(controlLoop);
 	}
