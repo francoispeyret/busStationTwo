@@ -5,6 +5,9 @@ export default class Puddle {
         this.container = new THREE.Object3D();
         this.setMesh();
         this.reset();
+        this.size = {
+            w: 40
+        }
 
     }
 

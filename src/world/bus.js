@@ -17,8 +17,9 @@ export default class Bus {
         this.maxPosX = 150;
 
         this.vel = {
-            value: 6,
-            max: 20
+            value: 0,
+            speedUp: .05,
+            max: 15
         }
 
         this.container = new THREE.Object3D()
@@ -32,40 +33,50 @@ export default class Bus {
             angle: 0,
         };
 
+        this.break = {
+            state: false,
+            mat: null,
+        };
+
+        this.spots = {
+            intensity: 1.5
+        }
+
         this.setBase();
         this.setWheels();
     }
 
-    animate() {
+    animate(sun) {
         this.time++;
-
-        if(this.spin.state === true) {
-            this.spin.angle += 10;
-            if(this.spin.angle > 360) {
-                this.spin.angle = 0;
-                this.spin.state = false;
-            }
-            this.container.rotation.y = THREE.Math.degToRad(this.angle*2 + this.spin.angle);
-        } else {
-            if(this.angle > 0 || this.angle < 0 ) {
-                if(this.angle > 0) {
-                    this.angle -= this.angleDelta;
-                } else {
-                    this.angle += this.angleDelta;
+        if(this.vel.value > 0) {
+            if(this.spin.state === true) {
+                this.spin.angle += 10;
+                if(this.spin.angle > 360) {
+                    this.spin.angle = 0;
+                    this.spin.state = false;
                 }
+                this.container.rotation.y = THREE.Math.degToRad(this.angle*2 + this.spin.angle);
+            } else {
+                if(this.angle > 0 || this.angle < 0 ) {
+                    if(this.angle > 0) {
+                        this.angle -= this.angleDelta;
+                    } else {
+                        this.angle += this.angleDelta;
+                    }
+                }
+                this.angle = Math.round(this.angle*10)*.1;
+                this.container.rotation.y = THREE.Math.degToRad(this.angle*2);
             }
-            this.angle = Math.round(this.angle*10)*.1;
-            this.container.rotation.y = THREE.Math.degToRad(this.angle*2);
         }
 
 
         if((this.container.position.x < this.maxPosX || this.angle > 0) &&
            (this.container.position.x > -this.maxPosX || this.angle < 0 )) {
-            this.container.position.add({x:-this.angle,y:0,z:0});
+            this.container.position.add({x:-this.angle*(this.vel.value/10),y:0,z:0});
         }
 
 
-        this.base.rotation.z = Math.sin(this.time/3)/75;
+        this.base.rotation.z = Math.sin(this.time*-this.vel.value/20)/75;
 
         for(let i = 0; i < 6; i++) {
             if(i === 2 || i === 5) {
@@ -73,10 +84,23 @@ export default class Bus {
             }
             this.wheels[i].rotation.z += this.vel.value / 30;
         }
+        if(this.break.state == true) {
+            this.break.mat.emissive = new THREE.Color( 0xFF0000 );
+        } else {
+            this.break.mat.emissive = new THREE.Color( 0x770000 );;
+        }
+
+        if(sun.light.position.y > 300) {
+            this.spots.spot1.intensity = 0.1;
+            this.spots.spot2.intensity = 0.1;
+        } else {
+            this.spots.spot1.intensity = 1.5;
+            this.spots.spot2.intensity = 1.5;
+        }
     }
 
     canTurn() {
-        return !this.spin.state;
+        return !this.spin.state && this.vel.value > 0;
     }
 
     turnRight() {
@@ -110,15 +134,55 @@ export default class Bus {
             lampTarget.position.set(0, 0, -160);
             this.base.add(lampTarget);
 
-            let headlamp1 = new THREE.SpotLight( 0xffffff, 1.5, 300, Math.PI / 5, 0.4, 1 );
-            headlamp1.position.set( 20, 20, -80 );
-            headlamp1.target = lampTarget;
-            this.base.add(headlamp1);
+            let headlampGem = new THREE.BoxBufferGeometry( 10, 5, 2 );
+            let headlampMat = new THREE.MeshPhongMaterial( { color: 0xFFFFFF, emissive: 0xAAAAAA} );
 
-            let headlamp2 = new THREE.SpotLight( 0xffffff, 1.5, 300, Math.PI / 5, 0.4, 1 );
-            headlamp2.position.set( -20, 20, -80 );
+            let headlamp1 = new THREE.SpotLight( 0xffffff, 1.5, 500, Math.PI / 2, 0.4, 1 );
+            headlamp1.position.set( 25, 0, -80 );
+            headlamp1.target = lampTarget;
+            headlamp1.castShadow = true;
+            this.spots.spot1 = headlamp1;
+            this.base.add(headlamp1);
+            let headLampMesh1 = new THREE.Mesh( headlampGem, headlampMat );
+            headLampMesh1.position.set( 22, 1, -81 );
+            this.base.add(headLampMesh1);
+
+            let headlamp2 = new THREE.SpotLight( 0xffffff, 1.5, 500, Math.PI / 2, 0.4, 1 );
+            headlamp2.position.set( -25, 0, -80 );
             headlamp2.target = lampTarget;
+            headlamp2.castShadow = true;
+            this.spots.spot2 = headlamp2;
             this.base.add(headlamp2);
+            let headLampMesh2 = new THREE.Mesh( headlampGem, headlampMat );
+            headLampMesh2.position.set( -22, 1, -81 );
+            this.base.add(headLampMesh2);
+
+
+            let stopTarget = new THREE.Object3D();
+            stopTarget.position.set(0, 0, 160);
+            this.base.add(stopTarget);
+
+
+            let stoplampBufferGeometry = new THREE.BoxBufferGeometry( 5, 12, 1 );
+            let stoplampBufferMat = new THREE.MeshPhongMaterial( { color: 0xFF0000, emissive: 0x770000} );
+            this.break.mat = stoplampBufferMat;
+
+            let stoplamp1 = new THREE.PointLight( 0xFF0000, 1, 70);
+            stoplamp1.position.set( 30, 20, 70 );
+            stoplamp1.target = stopTarget;
+            this.base.add(stoplamp1);
+            let stoplamp1BufferMat = new THREE.MeshPhongMaterial( { color: 0xFF0000, emissive: 0x990000} );
+            let stoplamp1Mesh = new THREE.Mesh(stoplampBufferGeometry, stoplampBufferMat);
+            stoplamp1Mesh.position.set( 27, 20, 80 );
+            this.base.add(stoplamp1Mesh);
+
+            let stoplamp2 = new THREE.PointLight( 0xFF0000, 1, 70);
+            stoplamp2.position.set( -30, 20, 70 );
+            stoplamp2.target = stopTarget;
+            this.base.add(stoplamp2);
+            let stoplamp2Mesh = new THREE.Mesh(stoplampBufferGeometry, stoplampBufferMat);
+            stoplamp2Mesh.position.set( -27, 20, 80 );
+            this.base.add(stoplamp2Mesh);
 
 
             let exhaustGem = new THREE.CylinderBufferGeometry( 2, 2, 15, 8, 1, true );
@@ -220,5 +284,25 @@ export default class Bus {
 
             this.container.add(this.wheels[i]);
         }
+    }
+
+    speedUp() {
+        if(this.vel.value < this.vel.max) {
+            this.vel.value += this.vel.speedUp;
+        }
+    }
+
+    speedDown() {
+        this.break.state = true;
+        if(this.vel.value > 0) {
+            this.vel.value -= this.vel.speedUp;
+            if(this.vel.value <= 0) {
+                this.vel.value = 0;
+            }
+        }
+    }
+
+    keyUp() {
+        this.break.state = false;
     }
 }

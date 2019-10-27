@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import Sun from './world/sun.js';
 import Bus from './world/bus.js';
 import Road from './world/road.js';
 import Spawner from './utils/spawner.js';
@@ -22,23 +23,10 @@ window.onresize = () => {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 };
 
-let light = new THREE.SpotLight( 0xffffff, 1, 0, Math.PI / 5, 0.3 );
-light.position.set( 1500, 1500, 0 );
-light.target.position.set( 0, 0, 0 );
-light.castShadow = true;
-light.shadow.radius = 0.5;
-light.shadow.camera.near = 500;
-light.shadow.camera.far = 2500;
-light.shadow.bias = 0.0001;
-light.shadow.mapSize.width = 4096;
-light.shadow.mapSize.height = 4096;
-scene.add( light );
+let sun = new Sun();
+scene.add( sun.light );
+scene.add( sun.ambient );
 
-let ambientLight = new THREE.AmbientLight( 0x115099 ); // soft white light
-
-ambientLight.intensity = 0.5;
-
-scene.add( ambientLight );
 
 let road = new Road();
 scene.add( road.container );
@@ -60,7 +48,8 @@ function animate() {
 	delta += clock.getDelta();
 	if (delta  > interval) {
 		spawner.animate(bus);
-	 	bus.animate();
+	 	sun.animate();
+	 	bus.animate(sun);
 	 	road.animate(bus.vel.value);
 	 	renderer.render( scene, camera );
 		delta = delta % interval;
@@ -83,11 +72,22 @@ window.onkeydown = function(e) {
 				bus.turnRight();
 			}, 1);
 		}
+		if(e.code === 'ArrowUp') {
+			controlLoop = setInterval(function () {
+				bus.speedUp();
+			}, 1);
+		}
+		if(e.code === 'ArrowDown') {
+			controlLoop = setInterval(function () {
+				bus.speedDown();
+			}, 1);
+		}
 	}
 };
 
 window.onkeyup = function(e) {
 	if(typeof bus == 'object') {
 		clearInterval(controlLoop);
+        bus.keyUp();
 	}
 }

@@ -31,8 +31,8 @@ export default class Spawner {
     colision(bus, object) {
         if( object.container.position.z < bus.size.d / 2 && object.container.position.z > -bus.size.d / 2) {
             if(
-                object.container.position.x > bus.container.position.x - bus.size.w/2 &&
-                object.container.position.x < bus.container.position.x + bus.size.w/2
+                object.container.position.x + object.size.w /2 > bus.container.position.x - bus.size.w/2 &&
+                object.container.position.x - object.size.w /2  < bus.container.position.x + bus.size.w/2
             ) {
                 return true;
             }

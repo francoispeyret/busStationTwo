@@ -25,6 +25,7 @@ export default class Objects {
         let grassMat = new THREE.MeshPhongMaterial( { color: 0xafff45 } );
         let grass = new THREE.Mesh( grassGem, grassMat );
         grass.receiveShadow = true;
+        grass.castShadow = true;
         grass.rotation.x = -1.5708;
         grass.position.set(0,-25,-400);
 
