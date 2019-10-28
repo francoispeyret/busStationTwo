@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import Scene from './utils/scene.js';
 import Sun from './world/sun.js';
 import Bus from './world/bus.js';
 import Road from './world/road.js';
 import Spawner from './utils/spawner.js';
 
-let scene = new THREE.Scene();
-scene.fog = new THREE.Fog( 0x59472b, 1000, 3000 );
+let scene = new Scene();
+
 let camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 10, 3000 );
 camera.position.set(0,350,450);
 camera.lookAt(new THREE.Vector3(0,0,0));
@@ -24,19 +25,16 @@ window.onresize = () => {
 };
 
 let sun = new Sun();
-scene.add( sun.light );
-scene.add( sun.ambient );
-
+scene.s.add( sun.light );
+scene.s.add( sun.ambient );
 
 let road = new Road();
-scene.add( road.container );
-
+scene.s.add( road.container );
 
 let bus = new Bus();
-scene.add( bus.container );
+scene.s.add( bus.container );
 
-let spawner = new Spawner(scene);
-
+let spawner = new Spawner(scene.s);
 
 let clock = new THREE.Clock();
 let delta = 0;
@@ -50,8 +48,9 @@ function animate() {
 		spawner.animate(bus);
 	 	sun.animate();
 	 	bus.animate(sun);
+	 	scene.animate(sun);
 	 	road.animate(bus.vel.value);
-	 	renderer.render( scene, camera );
+	 	renderer.render( scene.s, camera );
 		delta = delta % interval;
    }
 }

@@ -257,6 +257,7 @@ export default class Bus {
 
             let rim = new THREE.Mesh( rimGem, rimMat );
             rim.receiveShadow = true;
+            rim.castShadow = true;
             if(i < 3) {
                 rim.position.set(0, 0, -3);
                 rim.rotation.x = -1.5708;
