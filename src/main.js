@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import Scene from './utils/scene.js';
 import Camera from './utils/camera.js';
 import Renderer from './utils/renderer.js';
 import Sun from './world/sun.js';
@@ -44,8 +43,6 @@ class Application {
    };
 
 	initScene() {
-		//this.scene.s.add(this.world.sun.light);
-		//this.scene.s.add(this.world.sun.ambient);
 		this.scene.add(this.world.road.container);
 		this.scene.add(this.world.sun.light);
 		this.scene.add(this.world.sun.ambient);
