@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import Puddle from '../world/puddle.js';
+import Jumper from '../world/jumper.js';
 
 export default class Spawner {
     constructor(scene) {
@@ -8,6 +9,7 @@ export default class Spawner {
 
         this.objects = [];
         this.objects[0] = new Puddle();
+        this.objects[1] = new Jumper();
 
         for(let i = 0; i < this.objects.length; i++) {
             this.scene.add(this.objects[i].container);

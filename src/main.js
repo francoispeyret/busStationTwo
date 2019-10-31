@@ -22,7 +22,11 @@ class Application {
 			delta: 0,
 			interval: 1 / 60
 		};
+		this.control = {
+			loop: null
+		}
 		this.initScene();
+		this.initControl();
         this.animate = this.animate.bind(this);
 		this.animate();
 	}
@@ -48,40 +52,45 @@ class Application {
 		this.scene.add(this.world.sun.ambient);
 		this.scene.add(this.world.bus.container);
 	}
+
+	initControl() {
+		var that = this;
+		window.onkeydown = function(e) {
+			if(typeof that.world.bus == 'object') {
+				clearInterval(that.control.loop);
+				switch (e.code) {
+					case 'ArrowLeft':
+						that.control.loop = setInterval(function () {
+							that.world.bus.turnLeft();
+						}, 1);
+						break;
+					case 'ArrowRight':
+						that.control.loop = setInterval(function () {
+							that.world.bus.turnRight();
+						}, 1);
+						break;
+					case 'ArrowUp':
+						that.control.loop = setInterval(function () {
+							that.world.bus.speedUp();
+						}, 1);
+						break;
+					case 'ArrowDown':
+						that.control.loop = setInterval(function () {
+							that.world.bus.speedDown();
+						}, 1);
+						break;
+
+				}
+			}
+		}
+		window.onkeyup = function(e) {
+			if(typeof that.world.bus == 'object') {
+				clearInterval(that.control.loop);
+		        that.world.bus.keyUp();
+			}
+		}
+	}
+
 }
 
 let app = new Application();
-
-let   controlLoop      = null;
-window.onkeydown = function(e) {
-	if(typeof app.world.bus == 'object') {
-		clearInterval(controlLoop);
-		if(e.code === 'ArrowLeft') {
-			controlLoop = setInterval(function () {
-				app.world.bus.turnLeft();
-			}, 1);
-		}
-		if(e.code === 'ArrowRight') {
-			controlLoop = setInterval(function () {
-				app.world.bus.turnRight();
-			}, 1);
-		}
-		if(e.code === 'ArrowUp') {
-			controlLoop = setInterval(function () {
-				app.world.bus.speedUp();
-			}, 1);
-		}
-		if(e.code === 'ArrowDown') {
-			controlLoop = setInterval(function () {
-				app.world.bus.speedDown();
-			}, 1);
-		}
-	}
-};
-
-window.onkeyup = function(e) {
-	if(typeof app.world.bus == 'object') {
-		clearInterval(controlLoop);
-        app.world.bus.keyUp();
-	}
-}

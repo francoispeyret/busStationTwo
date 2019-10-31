@@ -19,7 +19,8 @@ export default class Bus {
         this.vel = {
             value: 0,
             speedUp: .05,
-            max: 15
+            speedDown: .01,
+            max: 10
         }
 
         this.container = new THREE.Object3D()
@@ -31,6 +32,11 @@ export default class Bus {
             state: false,
             animation: 0,
             angle: 0,
+        };
+
+        this.jump = {
+            state: false,
+            animation: 0
         };
 
         this.break = {
@@ -48,8 +54,8 @@ export default class Bus {
 
     animate(sun) {
         this.time++;
-        if(this.vel.value > 0) {
-            if(this.spin.state === true) {
+        if(this.vel.value > 0 ) {
+            if(this.spin.state === true ) {
                 this.spin.angle += 10;
                 if(this.spin.angle > 360) {
                     this.spin.angle = 0;
@@ -66,6 +72,17 @@ export default class Bus {
                 }
                 this.angle = Math.round(this.angle*10)*.1;
                 this.container.rotation.y = THREE.Math.degToRad(this.angle*2);
+            }
+            this.vel.value -= this.vel.speedDown;
+        }
+
+        if(this.jump.state === true) {
+            this.container.position.y = Math.sin(THREE.Math.degToRad(this.jump.animation))*66;
+            this.container.rotation.x = THREE.Math.degToRad(Math.sin(THREE.Math.degToRad(this.jump.animation)))*30;
+            this.jump.animation += 5;
+            if(this.jump.animation > 180) {
+                this.jump.state = false;
+                this.jump.animation = 0;
             }
         }
 
@@ -100,7 +117,7 @@ export default class Bus {
     }
 
     canTurn() {
-        return !this.spin.state && this.vel.value > 0;
+        return !this.jump.state && !this.spin.state && this.vel.value > 0;
     }
 
     turnRight() {
@@ -141,6 +158,11 @@ export default class Bus {
             headlamp1.position.set( 25, 0, -80 );
             headlamp1.target = lampTarget;
             headlamp1.castShadow = true;
+            headlamp1.shadow.radius = 0.5;
+            headlamp1.shadow.camera.near = 1;
+            headlamp1.shadow.camera.far = 500;
+            headlamp1.shadow.mapSize.width = 1024;
+            headlamp1.shadow.mapSize.height = 1024;
             this.spots.spot1 = headlamp1;
             this.base.add(headlamp1);
             let headLampMesh1 = new THREE.Mesh( headlampGem, headlampMat );
@@ -151,6 +173,11 @@ export default class Bus {
             headlamp2.position.set( -25, 0, -80 );
             headlamp2.target = lampTarget;
             headlamp2.castShadow = true;
+            headlamp2.shadow.radius = 0.5;
+            headlamp2.shadow.camera.near = 1;
+            headlamp2.shadow.camera.far = 500;
+            headlamp2.shadow.mapSize.width = 1024;
+            headlamp2.shadow.mapSize.height = 1024;
             this.spots.spot2 = headlamp2;
             this.base.add(headlamp2);
             let headLampMesh2 = new THREE.Mesh( headlampGem, headlampMat );
