@@ -9,27 +9,32 @@ export default class Sun {
         this.light.position.set( 1500, 1500, 0 );
         this.light.target.position.set( 0, 0, 0 );
         this.light.castShadow = true;
-        this.light.shadow.radius = 0.5;
+        this.light.shadow.radius = 50;
         this.light.shadow.camera.near = 50;
-        this.light.shadow.camera.far = 2500;
+        this.light.shadow.camera.far = 6000;
         this.light.shadow.bias = 0.0001;
-        this.light.shadow.mapSize.width = 4096;
-        this.light.shadow.mapSize.height = 4096;
+        this.light.shadow.mapSize.width = 16096;
+        this.light.shadow.mapSize.height = 16096;
 
         this.ambient = new THREE.AmbientLight( 0x115099 );
-        this.ambient.intensity = 0.5;
+        this.ambient.intensity = 1;
     }
 
-    animate () {
+    animate (bus) {
         if(this.light.position.y > -300 && this.light.position.y < 750) {
             this.animationClock += .3;
         } else if(this.light.position.y > 500) {
-            this.animationClock += .05;
+            this.animationClock += .0025;
         } else {
             this.animationClock += .15;
         }
         let x = -Math.floor(Math.sin(THREE.Math.degToRad(this.animationClock)) * 1500);
-        let y = Math.floor(Math.cos(THREE.Math.degToRad(this.animationClock)) * 1500);
-        this.light.position.set( x, y, 0 );
+        let z = Math.floor(Math.cos(THREE.Math.degToRad(this.animationClock)) * 1500);
+        this.light.position.set(
+            bus.container.position.x + x,
+            bus.container.position.y + 1500,
+            bus.container.position.z + z
+            );
+        this.light.target = bus.container;
     }
 }

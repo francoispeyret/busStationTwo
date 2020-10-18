@@ -5,6 +5,7 @@ export default class Renderer {
         this.r = new THREE.WebGLRenderer();
         this.r.setClearColor(0x000000, 1);
         this.r.setPixelRatio(1);
+        this.r.toneMapping = THREE.ACESFilmicToneMapping;
         this.r.gammaOutPut = true;
         this.r.shadowMap.enabled = true;
         this.r.shadowMap.type = THREE.PCFShadowMap;

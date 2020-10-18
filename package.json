@@ -1,7 +1,7 @@
 {
-  "name": "bus-station-tree",
-  "version": "1.0.0",
-  "description": "BusStation rework with three.js",
+  "name": "bus-station-three",
+  "version": "3.0.0",
+  "description": "BusStation v3 rework with three.js",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -20,6 +20,6 @@
     "webpack-dev-server": "^3.8.2"
   },
   "dependencies": {
-    "three": "^0.109.0"
+    "three": "^0.121.1"
   }
 }

@@ -17,17 +17,6 @@ export default class Spawner {
     }
 
     animate(bus) {
-        for(let i = 0; i < this.objects.length; i++) {
-            this.objects[i].container.position.add({x:0,y:0,z:bus.vel.value});
-
-            if(this.colision(bus, this.objects[i]) == true) {
-                this.objects[i].interact(bus);
-            }
-
-            if(this.objects[i].container.position.z > 400) {
-                this.objects[i].reset();
-            }
-        }
     }
 
     colision(bus, object) {

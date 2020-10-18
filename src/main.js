@@ -23,7 +23,13 @@ class Application {
 			interval: 1 / 60
 		};
 		this.control = {
-			loop: null
+			loop: null,
+			loopSpeedState: false,
+			loopSpeed: null,
+			loopRotateState: false,
+			loopRotate: null,
+			loopUpState: false,
+			loopUp: null,
 		}
 		this.initScene();
 		this.initControl();
@@ -32,17 +38,16 @@ class Application {
 	}
 
 	animate() {
-
 		window.requestAnimationFrame( this.animate );
 		this.animateOption.delta += this.animateOption.clock.getDelta();
 		if (this.animateOption.delta  > this.animateOption.interval) {
 			this.spawner.animate(this.world.bus);
-			this.world.sun.animate();
+			this.world.sun.animate(this.world.bus);
 			this.world.bus.animate(this.world.sun);
+			this.camera.updatePosition(this.world.bus);
 			this.world.road.animate(this.world.bus.vel.value);
 			this.renderer.r.render( this.scene, this.camera.c );
-			this.animateOption.delta =
-				this.animateOption.delta % this.animateOption.interval;
+			this.animateOption.delta = this.animateOption.delta % this.animateOption.interval;
 	   }
    };
 
@@ -60,24 +65,52 @@ class Application {
 				clearInterval(that.control.loop);
 				switch (e.code) {
 					case 'ArrowLeft':
-						that.control.loop = setInterval(function () {
-							that.world.bus.turnLeft();
-						}, 1);
+						if(that.control.loopRotateState === false) {
+							that.control.loopRotate = setInterval(function () {
+								that.world.bus.turnLeft();
+							}, 1);
+							that.control.loopRotateState = true;
+						}
 						break;
 					case 'ArrowRight':
-						that.control.loop = setInterval(function () {
-							that.world.bus.turnRight();
-						}, 1);
+						if(that.control.loopRotateState === false) {
+							that.control.loopRotate = setInterval(function () {
+								that.world.bus.turnRight();
+							}, 1);
+							that.control.loopRotateState = true;
+						}
 						break;
 					case 'ArrowUp':
-						that.control.loop = setInterval(function () {
-							that.world.bus.speedUp();
-						}, 1);
+						if(that.control.loopSpeedState === false) {
+							that.control.loopSpeed = setInterval(function () {
+								that.world.bus.speedUp();
+							}, 1);
+							that.control.loopSpeedState = true;
+						}
 						break;
 					case 'ArrowDown':
-						that.control.loop = setInterval(function () {
-							that.world.bus.speedDown();
-						}, 1);
+						if(that.control.loopSpeedState === false) {
+							that.control.loopSpeed = setInterval(function () {
+								that.world.bus.speedDown();
+							}, 1);
+							that.control.loopSpeedState = true;
+						}
+						break;
+					case 'ShiftRight':
+						if(that.control.loopUpState === false) {
+							that.control.loopUp = setInterval(function () {
+								that.world.bus.takeOff();
+							}, 1);
+							that.control.loopUpState = true;
+						}
+						break;
+					case 'ControlRight':
+						if(that.control.loopUpState === false) {
+							that.control.loopUp = setInterval(function () {
+								that.world.bus.down();
+							}, 1);
+							that.control.loopUpState = true;
+						}
 						break;
 
 				}
@@ -86,6 +119,33 @@ class Application {
 		window.onkeyup = function(e) {
 			if(typeof that.world.bus == 'object') {
 				clearInterval(that.control.loop);
+				switch (e.code) {
+					case 'ArrowLeft':
+						clearInterval(that.control.loopRotate);
+						that.control.loopRotateState = false;
+						break;
+					case 'ArrowRight':
+						clearInterval(that.control.loopRotate);
+						that.control.loopRotateState = false;
+						break;
+					case 'ArrowUp':
+						clearInterval(that.control.loopSpeed);
+						that.control.loopSpeedState = false;
+						break;
+					case 'ArrowDown':
+						clearInterval(that.control.loopSpeed);
+						that.control.loopSpeedState = false;
+						break;
+					case 'ShiftRight':
+						clearInterval(that.control.loopUp);
+						that.control.loopUpState = false;
+						break;
+					case 'ControlRight':
+						clearInterval(that.control.loopUp);
+						that.control.loopUpState = false;
+						break;
+
+				}
 		        that.world.bus.keyUp();
 			}
 		}

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import Tree from "./tree.js";
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
 export default class Objects {
     constructor(_options) {
@@ -14,14 +15,30 @@ export default class Objects {
         this.tirets = [];
         this.trees  = [];
 
-        this.setGrass();
+        this.setModel();
+        /*this.setGrass();
         this.setRoad();
         this.setTirets();
-        this.setTrees();
+        this.setTrees();*/
+    }
+
+    
+    setModel() {
+        var loader = new FBXLoader();
+        var that = this;
+        loader.load( './models/map.fbx', function ( object ) {
+            object.traverse( function ( child ) {
+                if ( child.isMesh ) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            } );
+            that.container.add( object );
+        } );
     }
 
     setGrass() {
-        let grassGem = new THREE.PlaneBufferGeometry( 1800, 1500, 50, 50 );
+        let grassGem = new THREE.PlaneBufferGeometry( 6000, 6000, 50, 50 );
         let grassMat = new THREE.MeshPhongMaterial( { color: 0xafff45 } );
         let grass = new THREE.Mesh( grassGem, grassMat );
         grass.receiveShadow = true;
@@ -84,28 +101,5 @@ export default class Objects {
 
     animate(vel) {
         this.time++;
-        for(let i = 0; i < 60; i++) {
-            this.tirets[i].position.add({x:0,y:0,z:vel})
-            if(this.tirets[i].position.z > 400) {
-                if(i % 2 == 1) {
-                    this.tirets[i].position.set(-50,-23,-1450);
-                } else {
-                    this.tirets[i].position.set(50,-23,-1500);
-                }
-            }
-        }
-        for(let i = 0; i < 15; i++) {
-            this.trees[i].object.position.add({x:0,y:0,z:vel})
-            if(this.trees[i].object.position.z > 400) {
-                const random = {
-                    x: Math.random() * 100 - 50
-                }
-                if(i % 2 == 1) {
-                    this.trees[i].object.position.set(-250 + random.x,-15,-1450);
-                } else {
-                    this.trees[i].object.position.set(250 + random.x,-15,-1500);
-                }
-            }
-        }
     }
 }
