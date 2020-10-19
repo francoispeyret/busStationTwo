@@ -47,9 +47,9 @@ export default class Objects {
         let body;
         if(model.name.indexOf('tree') > -1) {
             body =  new CANNON.Body({
-                mass: 100, // kg
-                position: new CANNON.Vec3(model.position.x, 15, model.position.z), // m
-                shape: new CANNON.Cylinder(10, 5, 30, 6),
+                mass: 10000, // kg
+                position: new CANNON.Vec3(model.position.x, 30, model.position.z), // m
+                shape: new CANNON.Cylinder(30, 30, 30, 6),
                 allowSleep: true,
                 sleepSpeedLimit: 0.5,
             });
@@ -69,13 +69,8 @@ export default class Objects {
         for(let body of this.bodies) {
             if(bus.container.position.distanceTo(body.model.position) < 1000 ) {
                 body.body.wakeUp();
-                body.model.quaternion._w = body.body.quaternion.w;
-                body.model.quaternion._x = body.body.quaternion.x;
-                body.model.quaternion._y = body.body.quaternion.y;
-                body.model.quaternion._z = body.body.quaternion.z;
-                body.model.position.x = body.body.position.x;
-                body.model.position.y = body.body.position.y;
-                body.model.position.z = body.body.position.z; 
+                body.model.quaternion.copy(body.body.quaternion);
+                body.model.position.copy(body.body.position);
             } else {
                 body.body.sleep();
             }

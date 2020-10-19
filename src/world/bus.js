@@ -14,8 +14,8 @@ export default class Bus {
         };
 
         this.body =  new CANNON.Body({
-            mass: 50, // kg
-            position: new CANNON.Vec3(0, 25, 0), // m
+            mass: 0, // kg
+            position: new CANNON.Vec3(0, 0, 0), // m
             shape: new CANNON.Sphere(50)
         });
 
@@ -69,8 +69,9 @@ export default class Bus {
             z: this.vel.vector.z
         });
         this.body.position.x += this.vel.vector.x;
-        this.body.position.y += this.vel.vector.z;
-        this.body.position.z += this.vel.vector.y;
+        this.body.position.y += this.vel.vector.y;
+        this.body.position.z += this.vel.vector.z;
+        console.log(this.body.position);
 
         this.bus.rotation.x = -this.vel.value/20 * ((this.container.position.y + 25)/this.maxPosY);
         this.container.rotation.y = -this.angle;
