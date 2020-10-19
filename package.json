@@ -20,6 +20,7 @@
     "webpack-dev-server": "^3.8.2"
   },
   "dependencies": {
+    "cannon": "^0.6.2",
     "three": "^0.121.1"
   }
 }

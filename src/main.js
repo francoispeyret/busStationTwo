@@ -6,6 +6,8 @@ import Bus from './world/bus.js';
 import Road from './world/road.js';
 import Spawner from './utils/spawner.js';
 
+import * as CANNON from 'cannon';
+
 class Application {
 	constructor() {
 		this.scene = new THREE.Scene();
@@ -31,14 +33,46 @@ class Application {
 			loopUpState: false,
 			loopUp: null,
 		}
+
+		this.cannon = {
+			lastTime: null,
+			time: null,
+			world: new CANNON.World(),
+			groud: {
+				body: new CANNON.Body({mass: 0}),
+				shape: new CANNON.Plane(),
+			},
+			sphere:{
+				model: null,
+				body: new CANNON.Body({
+					mass: 5, // kg
+					position: new CANNON.Vec3(0, 0, 100), // m
+					shape: new CANNON.Sphere(1)
+				})
+			},
+		}
+		this.cannon.world.gravity = new CANNON.Vec3(0, 0, -100);
+		this.cannon.world.addBody(this.cannon.sphere.body);
+
+		this.cannon.groud.body.addShape(this.cannon.groud.shape);
+		this.cannon.world.addBody(this.cannon.groud.body);
+
 		this.initScene();
 		this.initControl();
-        this.animate = this.animate.bind(this);
+		this.animate = this.animate.bind(this);
 		this.animate();
 	}
 
 	animate() {
+		var fixedTimeStep = 1.0 / 60.0; // seconds
+		var maxSubSteps = 3;
 		window.requestAnimationFrame( this.animate );
+		if(this.cannon.lastTime !== undefined && this.cannon.world !== undefined){
+			var dt = (this.cannon.time - this.cannon.lastTime) / 1000;
+			this.cannon.world.step(fixedTimeStep, dt, maxSubSteps);
+		}
+		console.log(this.cannon.world);
+		this.cannon.lastTime = this.cannon.time;
 		this.animateOption.delta += this.animateOption.clock.getDelta();
 		if (this.animateOption.delta  > this.animateOption.interval) {
 			this.spawner.animate(this.world.bus);
@@ -48,6 +82,11 @@ class Application {
 			this.world.road.animate(this.world.bus.vel.value);
 			this.renderer.r.render( this.scene, this.camera.c );
 			this.animateOption.delta = this.animateOption.delta % this.animateOption.interval;
+			this.cannon.sphere.model.position.set(
+				this.cannon.sphere.body.position.x,
+				this.cannon.sphere.body.position.z,
+				this.cannon.sphere.body.position.y
+			)
 	   }
    };
 
@@ -56,6 +95,16 @@ class Application {
 		this.scene.add(this.world.sun.light);
 		this.scene.add(this.world.sun.ambient);
 		this.scene.add(this.world.bus.container);
+
+		var geometry = new THREE.SphereGeometry( 10, 32, 32 );
+		var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+		this.cannon.sphere.model = new THREE.Mesh( geometry, material );
+		this.cannon.sphere.model.position.set(
+			this.cannon.sphere.body.position.x * 100,
+			this.cannon.sphere.body.position.z * 100,
+			this.cannon.sphere.body.position.y * 100
+			)
+		this.scene.add( this.cannon.sphere.model );
 	}
 
 	initControl() {
