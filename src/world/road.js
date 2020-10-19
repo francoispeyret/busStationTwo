@@ -1,25 +1,28 @@
 import * as THREE from "three";
 import Tree from "./tree.js";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import * as CANNON from 'cannon';
 
 export default class Objects {
-    constructor(_options) {
+    constructor(cannon) {
 
         this.time = 0;
+        this.cannon = cannon;
 
         // set up
-        this.container = new THREE.Object3D()
-        this.container.matrixAutoUpdate = false
+        this.container = new THREE.Object3D();
+        this.base = new THREE.Object3D()
+        this.base.matrixAutoUpdate = false;
+        this.container.add(this.base);
 
         // Objects
         this.tirets = [];
         this.trees  = [];
 
+
         this.setModel();
-        /*this.setGrass();
-        this.setRoad();
-        this.setTirets();
-        this.setTrees();*/
+
+        this.bodies = [];
     }
 
     
@@ -32,74 +35,50 @@ export default class Objects {
                     child.castShadow = true;
                     child.receiveShadow = true;
                 }
+                if( child.name.indexOf('tree') > -1) {
+                  that.addModelToBodyCannon(child)
+                }
             } );
             that.container.add( object );
         } );
     }
 
-    setGrass() {
-        let grassGem = new THREE.PlaneBufferGeometry( 6000, 6000, 50, 50 );
-        let grassMat = new THREE.MeshPhongMaterial( { color: 0xafff45 } );
-        let grass = new THREE.Mesh( grassGem, grassMat );
-        grass.receiveShadow = true;
-        grass.castShadow = true;
-        grass.rotation.x = -1.5708;
-        grass.position.set(0,-25,-400);
-
-        this.container.add(grass);
-    }
-
-    setRoad() {
-        let roadGem = new THREE.PlaneBufferGeometry( 300, 1500 );
-        let roadMat = new THREE.MeshPhongMaterial( { color: 0x333333 } );
-        let road = new THREE.Mesh( roadGem, roadMat );
-        road.receiveShadow = true;
-        road.position.set(0,-24,-400);
-        road.rotation.x = -1.5708;
-
-        this.container.add(road);
-    }
-
-    setTirets() {
-        let tiretGem = new THREE.PlaneBufferGeometry( 3, 1500 );
-        let tiretMat = new THREE.MeshPhongMaterial( { color: 0xfff428 } );
-        let tiret = new THREE.Mesh( tiretGem, tiretMat );
-        tiret.receiveShadow = true;
-        tiret.position.set(-145,-23,-400);
-        tiret.rotation.x = -1.5708;
-
-        let tiret2 = new THREE.Mesh( tiretGem, tiretMat );
-        tiret2.receiveShadow = true;
-        tiret2.position.set(145,-23,-400);
-        tiret2.rotation.x = -1.5708;
-
-        this.container.add(tiret);
-        this.container.add(tiret2);
-
-        let tiretsGem = new THREE.PlaneBufferGeometry( 4, 30 );
-        let tiretsMat = new THREE.MeshPhongMaterial( { color: 0xffffff } );
-        for(let i = 0; i < 60; i++) {
-            this.tirets[i] = new THREE.Mesh( tiretsGem, tiretsMat );
-            this.tirets[i].rotation.x = -1.5708;
-            this.tirets[i].receiveShadow = true;
-            if(i % 2 == 1) {
-                this.tirets[i].position.set(-50,-23,i*50 - 1450);
-            } else {
-                this.tirets[i].position.set(50,-23,i*50 - 1500);
-            }
-            this.container.add(this.tirets[i]);
+    addModelToBodyCannon(model) {
+        let body;
+        if(model.name.indexOf('tree') > -1) {
+            body =  new CANNON.Body({
+                mass: 100, // kg
+                position: new CANNON.Vec3(model.position.x, 15, model.position.z), // m
+                shape: new CANNON.Cylinder(10, 5, 30, 6),
+                allowSleep: true,
+                sleepSpeedLimit: 0.5,
+            });
+            body.sleep();
+        }
+        if(body) {
+            this.bodies.push({
+                body: body,
+                model:  model
+            });
+            this.cannon.world.addBody(body)
         }
     }
 
-
-    setTrees() {
-        for(let i = 0; i < 15; i++) {
-            this.trees[i] = new Tree('pos',i);
-            this.container.add(this.trees[i].object);
-        }
-    }
-
-    animate(vel) {
+    animate(bus) {
         this.time++;
+        for(let body of this.bodies) {
+            if(bus.container.position.distanceTo(body.model.position) < 1000 ) {
+                body.body.wakeUp();
+                body.model.quaternion._w = body.body.quaternion.w;
+                body.model.quaternion._x = body.body.quaternion.x;
+                body.model.quaternion._y = body.body.quaternion.y;
+                body.model.quaternion._z = body.body.quaternion.z;
+                body.model.position.x = body.body.position.x;
+                body.model.position.y = body.body.position.y;
+                body.model.position.z = body.body.position.z; 
+            } else {
+                body.body.sleep();
+            }
+        }
     }
 }

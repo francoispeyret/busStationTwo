@@ -14,11 +14,6 @@ class Application {
 		this.camera = new Camera();
 		this.renderer = new Renderer();
 		this.spawner = new Spawner(this.scene);
-		this.world = {
-			sun: new Sun(),
-			road: new Road(),
-			bus: new Bus(),
-		};
 		this.animateOption = {
 			clock: new THREE.Clock(),
 			delta: 0,
@@ -39,23 +34,32 @@ class Application {
 			time: null,
 			world: new CANNON.World(),
 			groud: {
-				body: new CANNON.Body({mass: 0}),
+				body: new CANNON.Body({mass: 0, position: new CANNON.Vec3(0, 0, 0)}),
 				shape: new CANNON.Plane(),
 			},
 			sphere:{
 				model: null,
 				body: new CANNON.Body({
-					mass: 5, // kg
-					position: new CANNON.Vec3(0, 0, 100), // m
+					mass: 500, // kg
+					position: new CANNON.Vec3(-150, 100, 0), // m
 					shape: new CANNON.Sphere(1)
 				})
 			},
 		}
-		this.cannon.world.gravity = new CANNON.Vec3(0, 0, -100);
+		this.cannon.world.quatNormalizeFast = true;
+		this.cannon.world.gravity = new CANNON.Vec3(0, -20, 0);
 		this.cannon.world.addBody(this.cannon.sphere.body);
-
+		
+		
 		this.cannon.groud.body.addShape(this.cannon.groud.shape);
+		this.cannon.groud.body.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
 		this.cannon.world.addBody(this.cannon.groud.body);
+		
+		this.world = {
+			sun: new Sun(),
+			road: new Road(this.cannon),
+			bus: new Bus(this.cannon),
+		};
 
 		this.initScene();
 		this.initControl();
@@ -65,13 +69,12 @@ class Application {
 
 	animate() {
 		var fixedTimeStep = 1.0 / 60.0; // seconds
-		var maxSubSteps = 3;
+		var maxSubSteps = 1;
 		window.requestAnimationFrame( this.animate );
 		if(this.cannon.lastTime !== undefined && this.cannon.world !== undefined){
 			var dt = (this.cannon.time - this.cannon.lastTime) / 1000;
 			this.cannon.world.step(fixedTimeStep, dt, maxSubSteps);
 		}
-		console.log(this.cannon.world);
 		this.cannon.lastTime = this.cannon.time;
 		this.animateOption.delta += this.animateOption.clock.getDelta();
 		if (this.animateOption.delta  > this.animateOption.interval) {
@@ -79,18 +82,16 @@ class Application {
 			this.world.sun.animate(this.world.bus);
 			this.world.bus.animate(this.world.sun);
 			this.camera.updatePosition(this.world.bus);
-			this.world.road.animate(this.world.bus.vel.value);
+			this.world.road.animate(this.world.bus);
 			this.renderer.r.render( this.scene, this.camera.c );
 			this.animateOption.delta = this.animateOption.delta % this.animateOption.interval;
-			this.cannon.sphere.model.position.set(
-				this.cannon.sphere.body.position.x,
-				this.cannon.sphere.body.position.z,
-				this.cannon.sphere.body.position.y
-			)
+			this.cannon.sphere.model.position.copy(this.cannon.sphere.body.position)
 	   }
    };
 
 	initScene() {
+		this.scene.fog = new THREE.FogExp2(0x66c1d4, 0.00025)
+
 		this.scene.add(this.world.road.container);
 		this.scene.add(this.world.sun.light);
 		this.scene.add(this.world.sun.ambient);
@@ -99,11 +100,7 @@ class Application {
 		var geometry = new THREE.SphereGeometry( 10, 32, 32 );
 		var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
 		this.cannon.sphere.model = new THREE.Mesh( geometry, material );
-		this.cannon.sphere.model.position.set(
-			this.cannon.sphere.body.position.x * 100,
-			this.cannon.sphere.body.position.z * 100,
-			this.cannon.sphere.body.position.y * 100
-			)
+		this.cannon.sphere.model.position.copy(this.cannon.sphere.body.position)
 		this.scene.add( this.cannon.sphere.model );
 	}
 

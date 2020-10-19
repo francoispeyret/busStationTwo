@@ -1,21 +1,31 @@
 import * as THREE from "three";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import * as CANNON from 'cannon';
 
 export default class Bus {
-    constructor(_options) {
+    constructor(cannon) {
 
         this.time = 0;
 
         this.size = {
             w: 70,
-            d: 160,
+            d: 200,
             h: 55
-        }
+        };
+
+        this.body =  new CANNON.Body({
+            mass: 50, // kg
+            position: new CANNON.Vec3(0, 25, 0), // m
+            shape: new CANNON.Sphere(50)
+        });
+
+		cannon.world.addBody(this.body);
+
 
         this.angle = 0;
         this.angleDelta = 0.01;
 
-        this.maxPosY = 300;
+        this.maxPosY = 1500;
 
         this.vel = {
             value: 0,
@@ -33,14 +43,12 @@ export default class Bus {
         this.container = new THREE.Object3D();
         this.container.castShadow = true;
         this.container.receiveShadow = true;
-        this.container.position.y = -25;
-        this.container.position.z = 40;
-        this.container.position.y = 100;
+        this.container.position.y = this.body.position.y;
+        this.container.position.z = this.body.position.z;
+        this.container.position.x = this.body.position.x;
         this.bus = new THREE.Object3D();
         this.container.add(this.bus);
 
-        new THREE.AxesHelper( 5 );
-        
         this.rotor = null;
 
         this.wheels = [
@@ -53,14 +61,16 @@ export default class Bus {
         this.setModel();
     }
 
-    animate(sun) {
+    animate() {
         this.time++;
         this.container.position.add({
             x: this.vel.vector.x,
             y: this.vel.vector.y,
             z: this.vel.vector.z
         });
-
+        this.body.position.x += this.vel.vector.x;
+        this.body.position.y += this.vel.vector.z;
+        this.body.position.z += this.vel.vector.y;
 
         this.bus.rotation.x = -this.vel.value/20 * ((this.container.position.y + 25)/this.maxPosY);
         this.container.rotation.y = -this.angle;
