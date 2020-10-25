@@ -7,6 +7,7 @@ import Road from './world/road.js';
 import Spawner from './utils/spawner.js';
 
 import * as CANNON from 'cannon';
+import Time from './utils/time.js';
 
 class Application {
 	constructor() {
@@ -14,9 +15,12 @@ class Application {
 		this.camera = new Camera();
 		this.renderer = new Renderer();
 		this.spawner = new Spawner(this.scene);
+
+		this.time = new Time();
+		
 		this.animateOption = {
 			clock: new THREE.Clock(),
-			delta: 0,
+			delta: 16,
 			interval: 1 / 60
 		};
 		this.control = {
@@ -71,10 +75,6 @@ class Application {
 		var fixedTimeStep = 1.0 / 60.0; // seconds
 		var maxSubSteps = 1;
 		window.requestAnimationFrame( this.animate );
-		if(this.cannon.lastTime !== undefined && this.cannon.world !== undefined){
-			var dt = (this.cannon.time - this.cannon.lastTime) / 1000;
-			this.cannon.world.step(fixedTimeStep, dt, maxSubSteps);
-		}
 		this.cannon.lastTime = this.cannon.time;
 		this.animateOption.delta += this.animateOption.clock.getDelta();
 		if (this.animateOption.delta  > this.animateOption.interval) {
@@ -86,6 +86,10 @@ class Application {
 			this.renderer.r.render( this.scene, this.camera.c );
 			this.animateOption.delta = this.animateOption.delta % this.animateOption.interval;
 			this.cannon.sphere.model.position.copy(this.cannon.sphere.body.position)
+			if(this.cannon.lastTime !== undefined && this.cannon.world !== undefined){
+				var dt = (this.cannon.time - this.cannon.lastTime) / 1000;
+				this.cannon.world.step(fixedTimeStep, dt, maxSubSteps);
+			}
 	   }
    };
 
