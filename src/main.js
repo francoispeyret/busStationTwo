@@ -5,6 +5,8 @@ import Sun from './world/sun.js';
 import Bus from './world/bus.js';
 import Road from './world/road.js';
 import Spawner from './utils/spawner.js';
+import Stats from '../node_modules/three/examples/jsm/libs/stats.module.js';
+import { GUI } from '../node_modules/three/examples/jsm/libs/dat.gui.module.js';
 
 import * as CANNON from 'cannon';
 import Time from './utils/time.js';
@@ -15,6 +17,13 @@ class Application {
 		this.camera = new Camera();
 		this.renderer = new Renderer();
 		this.spawner = new Spawner(this.scene);
+		
+		this.container = document.createElement( 'div' );
+		document.body.appendChild( this.container );
+
+		this.stats = new Stats();
+		this.container.appendChild( this.stats.dom );
+
 
 		this.time = new Time();
 		
@@ -75,6 +84,7 @@ class Application {
 		var fixedTimeStep = 1.0 / 60.0; // seconds
 		var maxSubSteps = 1;
 		window.requestAnimationFrame( this.animate );
+		this.stats.update();
 		this.cannon.lastTime = this.cannon.time;
 		this.animateOption.delta += this.animateOption.clock.getDelta();
 		if (this.animateOption.delta  > this.animateOption.interval) {

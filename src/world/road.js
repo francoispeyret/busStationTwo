@@ -47,9 +47,9 @@ export default class Objects {
         let body;
         if(model.name.indexOf('tree') > -1) {
             body =  new CANNON.Body({
-                mass: 10000, // kg
-                position: new CANNON.Vec3(model.position.x, 30, model.position.z), // m
-                shape: new CANNON.Cylinder(30, 30, 30, 6),
+                mass: 100000, // kg
+                position: new CANNON.Vec3(model.position.x, 120, model.position.z), // m
+                shape: new CANNON.Cylinder(30, 30, 120, 6),
                 allowSleep: true,
                 sleepSpeedLimit: 0.5,
             });
