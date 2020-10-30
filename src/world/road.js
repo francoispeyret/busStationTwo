@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import Tree from "./tree.js";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
-import * as CANNON from 'cannon';
+import * as CANNON from 'cannon-es';
 
 export default class Objects {
     constructor(cannon) {
@@ -29,7 +29,7 @@ export default class Objects {
     setModel() {
         var loader = new FBXLoader();
         var that = this;
-        loader.load( './models/map.fbx', function ( object ) {
+        loader.load( './models/map2.fbx', function ( object ) {
             object.traverse( function ( child ) {
                 if ( child.isMesh ) {
                     child.castShadow = true;
@@ -46,10 +46,31 @@ export default class Objects {
     addModelToBodyCannon(model) {
         let body;
         if(model.name.indexOf('tree') > -1) {
+            let options;
+            if(model.name.indexOf('normal') > -1) {
+                options = {
+                    mass: 10000,
+                    height: 160,
+                    width: 50
+                }
+            } else if (model.name.indexOf('big') > -1) {
+                options = {
+                    mass: 20000,
+                    height: 250,
+                    width: 80
+                }
+            } else {
+                options = {
+                    mass: 10000,
+                    height: 160,
+                    width: 50
+                }
+            }
+
             body =  new CANNON.Body({
-                mass: 100000, // kg
-                position: new CANNON.Vec3(model.position.x, 120, model.position.z), // m
-                shape: new CANNON.Cylinder(30, 30, 120, 6),
+                mass: options.mass, // kg
+                position: new CANNON.Vec3(model.position.x, options.height/2, model.position.z), // m
+                shape: new CANNON.Cylinder(options.width*.7, options.width, options.height, 6),
                 allowSleep: true,
                 sleepSpeedLimit: 0.5,
             });

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
-import * as CANNON from 'cannon';
+import * as CANNON from 'cannon-es';
 
 export default class Bus {
     constructor(cannon) {
@@ -15,8 +15,8 @@ export default class Bus {
 
         this.body =  new CANNON.Body({
             mass: 0, // kg
-            position: new CANNON.Vec3(0, 0, 0), // m
-            shape: new CANNON.Sphere(50)
+            position: new CANNON.Vec3(0, 25, 0), // m
+            shape: new CANNON.Box(new CANNON.Vec3(25, 50, 70))
         });
 
 		cannon.world.addBody(this.body);
@@ -67,12 +67,12 @@ export default class Bus {
             x: this.vel.vector.x,
             y: this.vel.vector.y,
             z: this.vel.vector.z
-        });
+        }); 
         this.body.position.x += this.vel.vector.x;
         this.body.position.y += this.vel.vector.y;
         this.body.position.z += this.vel.vector.z;
-        console.log(this.body.position);
-
+        this.body.quaternion.copy(this.container.quaternion)
+        this.vel.vector.y = this.vel.vector.y / 1.5;
         this.bus.rotation.x = -this.vel.value/20 * ((this.container.position.y + 25)/this.maxPosY);
         this.container.rotation.y = -this.angle;
         
@@ -129,13 +129,13 @@ export default class Bus {
 
     takeOff() {
         if(this.container.position.y < this.maxPosY) {
-            this.container.position.y += 0.5;
+            this.vel.vector.y += .5;
         }
     }
 
     down() {
-        if(this.container.position.y > -25) {
-            this.container.position.y -= 0.5;
+        if(this.container.position.y > -15) {
+            this.vel.vector.y -= .5;
         }
     }
 

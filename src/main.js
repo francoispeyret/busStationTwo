@@ -8,7 +8,8 @@ import Spawner from './utils/spawner.js';
 import Stats from '../node_modules/three/examples/jsm/libs/stats.module.js';
 import { GUI } from '../node_modules/three/examples/jsm/libs/dat.gui.module.js';
 
-import * as CANNON from 'cannon';
+import * as CANNON from 'cannon-es';
+import cannonDebugger from 'cannon-es-debugger'
 import Time from './utils/time.js';
 
 class Application {
@@ -16,7 +17,6 @@ class Application {
 		this.scene = new THREE.Scene();
 		this.camera = new Camera();
 		this.renderer = new Renderer();
-		this.spawner = new Spawner(this.scene);
 		
 		this.container = document.createElement( 'div' );
 		document.body.appendChild( this.container );
@@ -46,27 +46,32 @@ class Application {
 			lastTime: null,
 			time: null,
 			world: new CANNON.World(),
-			groud: {
-				body: new CANNON.Body({mass: 0, position: new CANNON.Vec3(0, 0, 0)}),
-				shape: new CANNON.Plane(),
+			floor: {
+				body: new CANNON.Body({
+					mass: 0,
+					shape: new CANNON.Plane(),
+					position: new CANNON.Vec3(0, 0, 0)
+				})
 			},
 			sphere:{
-				model: null,
+				model: new THREE.Mesh( 
+					new THREE.CylinderGeometry( 10, 50, 200, 24),
+					new THREE.MeshLambertMaterial( {color: 0xffff00} )
+					),
 				body: new CANNON.Body({
-					mass: 500, // kg
-					position: new CANNON.Vec3(-150, 100, 0), // m
-					shape: new CANNON.Sphere(1)
+					mass: 50000, // kg
+					position: new CANNON.Vec3(0, 200, 0), // m
+					shape: new CANNON.Box(new CANNON.Vec3(100,100,100))
 				})
 			},
 		}
-		this.cannon.world.quatNormalizeFast = true;
-		this.cannon.world.gravity = new CANNON.Vec3(0, -20, 0);
+		this.cannon.world.gravity = new CANNON.Vec3(0, -98, 0);
+		this.cannon.world.solver.iterations = 10;
 		this.cannon.world.addBody(this.cannon.sphere.body);
 		
-		
-		this.cannon.groud.body.addShape(this.cannon.groud.shape);
-		this.cannon.groud.body.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
-		this.cannon.world.addBody(this.cannon.groud.body);
+		this.cannon.floor.body.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI * 0.5);
+		this.cannon.world.addBody(this.cannon.floor.body);
+		cannonDebugger(this.scene, this.cannon.world.bodies)
 		
 		this.world = {
 			sun: new Sun(),
@@ -88,17 +93,17 @@ class Application {
 		this.cannon.lastTime = this.cannon.time;
 		this.animateOption.delta += this.animateOption.clock.getDelta();
 		if (this.animateOption.delta  > this.animateOption.interval) {
-			this.spawner.animate(this.world.bus);
 			this.world.sun.animate(this.world.bus);
 			this.world.bus.animate(this.world.sun);
-			this.camera.updatePosition(this.world.bus);
 			this.world.road.animate(this.world.bus);
+			this.camera.updatePosition(this.world.bus);
 			this.renderer.r.render( this.scene, this.camera.c );
 			this.animateOption.delta = this.animateOption.delta % this.animateOption.interval;
 			this.cannon.sphere.model.position.copy(this.cannon.sphere.body.position)
+			this.cannon.sphere.model.quaternion.copy(this.cannon.sphere.body.quaternion)
 			if(this.cannon.lastTime !== undefined && this.cannon.world !== undefined){
 				var dt = (this.cannon.time - this.cannon.lastTime) / 1000;
-				this.cannon.world.step(fixedTimeStep, dt, maxSubSteps);
+				this.cannon.world.step(this.animateOption.delta);
 			}
 	   }
    };
@@ -111,19 +116,22 @@ class Application {
 		this.scene.add(this.world.sun.ambient);
 		this.scene.add(this.world.bus.container);
 
-		var geometry = new THREE.SphereGeometry( 10, 32, 32 );
-		var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-		this.cannon.sphere.model = new THREE.Mesh( geometry, material );
-		this.cannon.sphere.model.position.copy(this.cannon.sphere.body.position)
+		this.cannon.sphere.model.castShadow = true;
+		this.cannon.sphere.model.receiveShadow = true;
+		this.cannon.sphere.model.position.copy(this.cannon.sphere.body.position);
+		this.cannon.sphere.model.quaternion.copy(this.cannon.sphere.body.quaternion);
 		this.scene.add( this.cannon.sphere.model );
 	}
 
 	initControl() {
 		var that = this;
 		window.onkeydown = function(e) {
+			e.preventDefault();
 			if(typeof that.world.bus == 'object') {
 				clearInterval(that.control.loop);
+				console.log(e.code);
 				switch (e.code) {
+					case 'KeyA':
 					case 'ArrowLeft':
 						if(that.control.loopRotateState === false) {
 							that.control.loopRotate = setInterval(function () {
@@ -132,6 +140,7 @@ class Application {
 							that.control.loopRotateState = true;
 						}
 						break;
+					case 'KeyD':
 					case 'ArrowRight':
 						if(that.control.loopRotateState === false) {
 							that.control.loopRotate = setInterval(function () {
@@ -140,6 +149,7 @@ class Application {
 							that.control.loopRotateState = true;
 						}
 						break;
+					case 'KeyW':
 					case 'ArrowUp':
 						if(that.control.loopSpeedState === false) {
 							that.control.loopSpeed = setInterval(function () {
@@ -148,6 +158,7 @@ class Application {
 							that.control.loopSpeedState = true;
 						}
 						break;
+					case 'KeyS':
 					case 'ArrowDown':
 						if(that.control.loopSpeedState === false) {
 							that.control.loopSpeed = setInterval(function () {
@@ -156,6 +167,7 @@ class Application {
 							that.control.loopSpeedState = true;
 						}
 						break;
+					case 'Space':
 					case 'ShiftRight':
 						if(that.control.loopUpState === false) {
 							that.control.loopUp = setInterval(function () {
@@ -164,6 +176,7 @@ class Application {
 							that.control.loopUpState = true;
 						}
 						break;
+					case 'ConstrolLeft':
 					case 'ControlRight':
 						if(that.control.loopUpState === false) {
 							that.control.loopUp = setInterval(function () {
@@ -180,26 +193,32 @@ class Application {
 			if(typeof that.world.bus == 'object') {
 				clearInterval(that.control.loop);
 				switch (e.code) {
+					case 'KeyA':
 					case 'ArrowLeft':
 						clearInterval(that.control.loopRotate);
 						that.control.loopRotateState = false;
 						break;
+					case 'KeyD':
 					case 'ArrowRight':
 						clearInterval(that.control.loopRotate);
 						that.control.loopRotateState = false;
 						break;
+					case 'KeyW':
 					case 'ArrowUp':
 						clearInterval(that.control.loopSpeed);
 						that.control.loopSpeedState = false;
 						break;
+					case 'KeyS':
 					case 'ArrowDown':
 						clearInterval(that.control.loopSpeed);
 						that.control.loopSpeedState = false;
 						break;
+					case 'Space':
 					case 'ShiftRight':
 						clearInterval(that.control.loopUp);
 						that.control.loopUpState = false;
 						break;
+					case 'ConstrolLeft':
 					case 'ControlRight':
 						clearInterval(that.control.loopUp);
 						that.control.loopUpState = false;
