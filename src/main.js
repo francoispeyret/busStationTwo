@@ -60,16 +60,33 @@ class Application {
 					),
 				body: new CANNON.Body({
 					mass: 50000, // kg
-					position: new CANNON.Vec3(0, 200, 0), // m
-					shape: new CANNON.Box(new CANNON.Vec3(100,100,100))
+					position: new CANNON.Vec3(200, 200, 0), // m
+					shape: new CANNON.Box(new CANNON.Vec3(50,100,50))
 				})
 			},
 		}
 		this.cannon.world.gravity = new CANNON.Vec3(0, -98, 0);
 		this.cannon.world.solver.iterations = 10;
+		this.cannon.world.defaultContactMaterial.friction = 0.2;
 		this.cannon.world.addBody(this.cannon.sphere.body);
 		
+        var groundMaterial = new CANNON.Material('groundMaterial')
+        var wheelMaterial = new CANNON.Material('wheelMaterial')
+        var wheelGroundContactMaterial = (window.wheelGroundContactMaterial = new CANNON.ContactMaterial(
+          wheelMaterial,
+          groundMaterial,
+          {
+            friction: 0.1,
+            restitution: 0,
+            contactEquationStiffness: 1000,
+          }
+		))
+        // We must add the contact materials to the world
+        this.cannon.world.addContactMaterial(wheelGroundContactMaterial)
+
+		
 		this.cannon.floor.body.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI * 0.5);
+		this.cannon.floor.body.material = groundMaterial;
 		this.cannon.world.addBody(this.cannon.floor.body);
 		cannonDebugger(this.scene, this.cannon.world.bodies)
 		
@@ -124,109 +141,50 @@ class Application {
 	}
 
 	initControl() {
-		var that = this;
-		window.onkeydown = function(e) {
-			e.preventDefault();
-			if(typeof that.world.bus == 'object') {
-				clearInterval(that.control.loop);
-				console.log(e.code);
-				switch (e.code) {
-					case 'KeyA':
-					case 'ArrowLeft':
-						if(that.control.loopRotateState === false) {
-							that.control.loopRotate = setInterval(function () {
-								that.world.bus.turnLeft();
-							}, 1);
-							that.control.loopRotateState = true;
-						}
-						break;
-					case 'KeyD':
-					case 'ArrowRight':
-						if(that.control.loopRotateState === false) {
-							that.control.loopRotate = setInterval(function () {
-								that.world.bus.turnRight();
-							}, 1);
-							that.control.loopRotateState = true;
-						}
-						break;
-					case 'KeyW':
-					case 'ArrowUp':
-						if(that.control.loopSpeedState === false) {
-							that.control.loopSpeed = setInterval(function () {
-								that.world.bus.speedUp();
-							}, 1);
-							that.control.loopSpeedState = true;
-						}
-						break;
-					case 'KeyS':
-					case 'ArrowDown':
-						if(that.control.loopSpeedState === false) {
-							that.control.loopSpeed = setInterval(function () {
-								that.world.bus.speedDown();
-							}, 1);
-							that.control.loopSpeedState = true;
-						}
-						break;
-					case 'Space':
-					case 'ShiftRight':
-						if(that.control.loopUpState === false) {
-							that.control.loopUp = setInterval(function () {
-								that.world.bus.takeOff();
-							}, 1);
-							that.control.loopUpState = true;
-						}
-						break;
-					case 'ConstrolLeft':
-					case 'ControlRight':
-						if(that.control.loopUpState === false) {
-							that.control.loopUp = setInterval(function () {
-								that.world.bus.down();
-							}, 1);
-							that.control.loopUpState = true;
-						}
-						break;
+		document.onkeydown = this.handlerControl;
+		document.onkeyup = this.handlerControl;
+	}
 
-				}
-			}
-		}
-		window.onkeyup = function(e) {
-			if(typeof that.world.bus == 'object') {
-				clearInterval(that.control.loop);
-				switch (e.code) {
-					case 'KeyA':
-					case 'ArrowLeft':
-						clearInterval(that.control.loopRotate);
-						that.control.loopRotateState = false;
-						break;
-					case 'KeyD':
-					case 'ArrowRight':
-						clearInterval(that.control.loopRotate);
-						that.control.loopRotateState = false;
-						break;
-					case 'KeyW':
-					case 'ArrowUp':
-						clearInterval(that.control.loopSpeed);
-						that.control.loopSpeedState = false;
-						break;
-					case 'KeyS':
-					case 'ArrowDown':
-						clearInterval(that.control.loopSpeed);
-						that.control.loopSpeedState = false;
-						break;
-					case 'Space':
-					case 'ShiftRight':
-						clearInterval(that.control.loopUp);
-						that.control.loopUpState = false;
-						break;
-					case 'ConstrolLeft':
-					case 'ControlRight':
-						clearInterval(that.control.loopUp);
-						that.control.loopUpState = false;
-						break;
+	handlerControl(event) {
+		const that = app;
+		const busControl = that.world.bus.vehicule;
+        const up = event.type == 'keyup'
+		if (!up && event.type !== 'keydown') return;
+		
+		var maxSteerVal = Math.PI / 8;
+		var maxSpeed = 10;
+		var maxForce = 1000000;
+		
+		console.log(event.code);
 
-				}
-		        that.world.bus.keyUp();
-			}
+		switch (event.code) {
+			case 'KeyA':
+			case 'ArrowLeft':
+				busControl.setSteeringValue(up ? 0 : maxSteerVal, 1)
+				busControl.setSteeringValue(up ? 0 : maxSteerVal, 2)
+			case 'KeyD':
+			case 'ArrowRight':
+				busControl.setSteeringValue(up ? 0 : -maxSteerVal, 1)
+				busControl.setSteeringValue(up ? 0 : -maxSteerVal, 2)
+				break;
+			case 'KeyW':
+			case 'ArrowUp':
+				busControl.setWheelForce(up ? 0 : -maxForce, 0)
+				busControl.setWheelForce(up ? 0 : -maxForce, 3)
+				break;
+			case 'KeyS':
+			case 'ArrowDown':
+				busControl.setWheelForce(up ? 0 : maxForce / 2, 0)
+				busControl.setWheelForce(up ? 0 : maxForce / 2, 3)
+				break;
+			case 'Space':
+			case 'ShiftRight':
+				that.world.bus.takeOff();
+				break;
+			case 'ConstrolLeft':
+			case 'ControlRight':
+				that.world.bus.down();
+			break;
 		}
 	}
 

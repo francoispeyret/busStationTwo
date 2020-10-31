@@ -55,7 +55,7 @@ export default class Objects {
                 }
             } else if (model.name.indexOf('big') > -1) {
                 options = {
-                    mass: 20000,
+                    mass: 30000,
                     height: 250,
                     width: 80
                 }
@@ -70,7 +70,7 @@ export default class Objects {
             body =  new CANNON.Body({
                 mass: options.mass, // kg
                 position: new CANNON.Vec3(model.position.x, options.height/2, model.position.z), // m
-                shape: new CANNON.Cylinder(options.width*.7, options.width, options.height, 6),
+                shape: new CANNON.Cylinder(options.width*.5, options.width, options.height, 12),
                 allowSleep: true,
                 sleepSpeedLimit: 0.5,
             });

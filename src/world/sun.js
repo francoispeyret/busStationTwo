@@ -24,7 +24,7 @@ export default class Sun {
         if(this.light.position.y > -300 && this.light.position.y < 750) {
             this.animationClock += .3;
         } else if(this.light.position.y > 500) {
-            this.animationClock += .0025;
+            this.animationClock += .025;
         } else {
             this.animationClock += .15;
         }
