@@ -73,7 +73,7 @@ export default class Bus {
 
         this.rotor = null;
 
-        this.engineAudio = new Audio('/engine_loop_3.mp3');
+        this.engineAudio = new Audio('./engine_loop_3.mp3');
 
         this.engineAudio.loop = true;
         this.engineAudio.volume = 0.1;
