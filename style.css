@@ -10,3 +10,34 @@ html {
 canvas {
 
 }
+
+.reset {
+    position: fixed;
+    z-index: 5;
+    left: calc(50% - 33px);
+    bottom: 20px;
+    appearance: none;
+    border: 0;
+    background-color: transparent;
+    filter: drop-shadow(0 15px 12px rgba(0,0,0,0.5));
+    cursor: pointer;
+}
+.reset:active,
+.reset:focus,
+.reset:hover {
+    outline: none;
+    border: 0;
+}
+
+.reset:hover svg {
+    animation: rotate ease 0.5s;
+}
+
+@keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

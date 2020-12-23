@@ -15,35 +15,55 @@ export default class Bus {
             h: 55
         };
 
-        this.centerOfMassAdjust = new CANNON.Vec3(0, 0, -1);
-        this.chassisShape = new CANNON.Box(new CANNON.Vec3(35, 50, 70));
-        this.chassisBody = new CANNON.Body({ mass: 50 });
-        this.chassisBody.addShape(this.chassisShape, this.centerOfMassAdjust);
-        this.chassisBody.position.set(0,150,0);
+        this.chassisShape = new CANNON.Box(new CANNON.Vec3(2, 1, 1.2));
+        this.chassisBody = new CANNON.Body({ mass: 1000 });
+        this.chassisBody.addShape(this.chassisShape, new CANNON.Vec3())
+        this.chassisBody.position.set(-0,0,5);
+        this.chassisBody.angularVelocity.set(0, 0, 8.25)
 
-        this.vehicule = new CANNON.RigidVehicle({
+        this.vehicule = new CANNON.RaycastVehicle({
             chassisBody: this.chassisBody
         });
 
+        var options = {
+            radius: 0.5,
+            directionLocal: new CANNON.Vec3(0, 0, -1),
+            suspensionStiffness: 15,
+            suspensionRestLength: 0.1,
+            frictionSlip: 1,
+            dampingRelaxation: 2.3,
+            dampingCompression: 4.4,
+            maxSuspensionForce: 10000000,
+            rollInfluence: 0.01,
+            axleLocal: new CANNON.Vec3(0, 1, 0),
+            chassisConnectionPointLocal: new CANNON.Vec3(1, 1, 0),
+            maxSuspensionTravel: 0.3,
+            customSlidingRotationalSpeed: -5,
+            useCustomSlidingRotationalSpeed: true,
+          }
+  
+
+        let Zaxe = -1.2;
+
+        options.chassisConnectionPointLocal.set(1, 1, Zaxe);
+        this.vehicule.addWheel(options);
+
+        options.chassisConnectionPointLocal.set(1, -1, Zaxe);
+        this.vehicule.addWheel(options);
+
+        options.chassisConnectionPointLocal.set(-1, 1, Zaxe);
+        this.vehicule.addWheel(options);
+
+        options.chassisConnectionPointLocal.set(-1, -1, Zaxe);
+        this.vehicule.addWheel(options);
+
+        this.wheels = [];
         this.setModel();
 
         this.angle = 0;
         this.angleDelta = 0.01;
 
         this.maxPosY = 1500;
-
-        this.vel = {
-            value: 0,
-            rotate: 0,
-            speedUp: .02,
-            speedDown: .001,
-            max: 10,
-            vector: {
-                x: 0,
-                y: 0,
-                z: 0
-            }
-        }
 
         this.container = new THREE.Object3D();
         this.container.castShadow = true;
@@ -53,39 +73,54 @@ export default class Bus {
 
         this.rotor = null;
 
-        this.wheels = [
-            null,
-            null,
-            null,
-            null
-        ];
-        
+        this.engineAudio = new Audio('/engine_loop_3.mp3');
+
+        this.engineAudio.loop = true;
+        this.engineAudio.volume = 0.1;
+        this.engineAudio.loopStart = 0.1;
+        //this.engineAudio.play();
+
     }
 
     animate() {
         this.time++;
         this.container.position.copy(this.chassisBody.position);
-        this.container.quaternion.copy(this.chassisBody.quaternion)
-        this.vel.vector.y = this.vel.vector.y / 1.5;
+        this.container.quaternion.copy(this.chassisBody.quaternion);
         //this.bus.rotation.x = -this.vel.value/20 * ((this.container.position.y + 25)/this.maxPosY);
         //this.container.rotation.y = -this.angle;        
+        
+
+        const playbackSpeed = Math.min(
+            (Math.abs(this.vehicule.currentVehicleSpeedKmHour)+1)/3,
+            10
+            );
+        this.engineAudio.playbackRate = playbackSpeed;
+
+        console.log(this.chassisBody.collisionFilterMask );
 
         if(this.rotor) {
             const onGround = this.container.position.y > -25 ? 0.05 : 0;
             this.rotor.rotation.y -= Math.sin(0.05 + onGround + (this.container.position.y / 2500));
         }
+        
     }
 
     takeOff() {
-        if(this.container.position.y < this.maxPosY) {
-            this.vel.vector.y += .5;
-        }
+        //console.log(this.chassisBody);
+        //this.chassisBody.applyLocalImpulse(new CANNON.Vec3(0,1000,0), new CANNON.Vec3(0,0,0))
     }
 
     down() {
         if(this.container.position.y > -15) {
             this.vel.vector.y -= .5;
         }
+    }
+
+    reset() {
+        this.engineAudio.play();
+        this.vehicule.chassisBody.position.z = 5;
+        this.chassisBody.angularVelocity.set(0, 0, 8.25)
+        this.vehicule.chassisBody.quaternion.copy(new CANNON.Quaternion());
     }
 
     setModel() {
@@ -95,7 +130,7 @@ export default class Bus {
 
         var axisWidth = 70;
 
-        loader.load( './models/bus.fbx', function ( object ) {
+        loader.load( './models/bus2.fbx', function ( object ) {
             object.traverse( function ( child ) {
                 if(child.name == 'lamp1' || child.name == 'lamp2') {
                     let lampMaterail = new THREE.MeshLambertMaterial({color: 0x000000, emissive: 0xffe6a5})
@@ -109,78 +144,39 @@ export default class Bus {
                     that.rotor = child;
                 }
                 if(child.name.indexOf('wheel') > -1) {
-                }
-                if(child.name == 'wheelFrontLeft') {
-                    that.wheels[0] = child;
-                    var wheelMaterial = new CANNON.Material('wheelMaterial');
-                    var down = new CANNON.Vec3(0, 0, -1);
-                    var wheelShape = new CANNON.Sphere(25);
-                    var wheelBody = new CANNON.Body({ mass: 50, material: wheelMaterial });
-                    wheelBody.addShape(wheelShape)
-                    that.vehicule.addWheel({
-                        body: wheelBody,
-                        position: new CANNON.Vec3(-50, -50, -100).vadd(that.centerOfMassAdjust),
-                        axis: new CANNON.Vec3(1, 0, 0),
-                        direction: down,
-                      });
-                }
-                if(child.name == 'wheelFrontRight') {
-                    that.wheels[1] = child;
-                    var wheelMaterial = new CANNON.Material('wheelMaterial');
-                    var down = new CANNON.Vec3(0, -1, 0);
-                    var wheelShape = new CANNON.Cylinder(25,25,25,25);
-                    console.log(wheelShape);
-                    var wheelBody = new CANNON.Body({ mass: 50, material: wheelMaterial });
-                    wheelBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), -Math.PI * 0.5);
-                    wheelBody.addShape(wheelShape)
-                    that.vehicule.addWheel({
-                        body: wheelBody,
-                        position: new CANNON.Vec3(50, -50, -100).vadd(that.centerOfMassAdjust),
-                        axis: new CANNON.Vec3(0, 0, 1),
-                        direction: down,
-                      });
-                }
-                if(child.name == 'wheelBackLeft') {
-                    that.wheels[2] = child;
-                    var wheelMaterial = new CANNON.Material('wheelMaterial');
-                    var down = new CANNON.Vec3(0, 0, -1);
-                    var wheelShape = new CANNON.Sphere(25);
-                    var wheelBody = new CANNON.Body({ mass: 50, material: wheelMaterial });
-                    wheelBody.addShape(wheelShape)
-                    that.vehicule.addWheel({
-                        body: wheelBody,
-                        position: new CANNON.Vec3(-50, -50, 100).vadd(that.centerOfMassAdjust),
-                        axis: new CANNON.Vec3(1, 0, 0),
-                        direction: down,
-                      });
-                }
-                if(child.name == 'wheelBackRight') {
-                    that.wheels[3] = child;
-                    var wheelMaterial = new CANNON.Material('wheelMaterial');
-                    var down = new CANNON.Vec3(0, 0, -1);
-                    var wheelShape = new CANNON.Sphere(25);
-                    var wheelBody = new CANNON.Body({ mass: 50, material: wheelMaterial });
-                    wheelBody.addShape(wheelShape)
-                    that.vehicule.addWheel({
-                        body: wheelBody,
-                        position: new CANNON.Vec3(50, -50, 100).vadd(that.centerOfMassAdjust),
-                        axis: new CANNON.Vec3(1, 0, 0),
-                        direction: down,
-                      });
+                    var wheel = that.vehicule.wheelInfos[that.wheels.length];
+                    var cylinderShape = new CANNON.Cylinder(wheel.radius, wheel.radius, wheel.radius / 2, 20);
+                    var wheelBody = new CANNON.Body({
+                        mass: 0,
+                    });
+                    wheelBody.type = CANNON.Body.KINEMATIC;
+                    wheelBody.collisionFilterGroup = 0;// turn off collisions
+                    var q = new CANNON.Quaternion();
+                    q.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
+                    wheelBody.addShape(cylinderShape, new CANNON.Vec3(), q);
+                    that.wheels.push(wheelBody);
+                    that.cannon.world.addBody(wheelBody);
                 }
                 if ( child.isMesh ) {
                     child.castShadow = true;
                 }
             } );
             mesh = object;
-            mesh.rotation.y = Math.PI/2;
-            mesh.position.y = -35;
+            mesh.scale.set(0.3,0.3,0.3);
+            mesh.position.z = -1.5;
+            mesh.rotation.x = Math.PI/2;
             that.bus.add( mesh );
 
-            for (var i = 0; i < that.vehicule.wheelBodies.length; i++) {
-                that.vehicule.wheelBodies[i].angularDamping = 0.4
-              }
             that.vehicule.addToWorld(that.cannon.world);
+            that.cannon.world.addEventListener('postStep', function () {
+                for (var i = 0; i < that.vehicule.wheelInfos.length; i++) {
+                    that.vehicule.updateWheelTransform(i);
+                    var t = that.vehicule.wheelInfos[i].worldTransform
+                    var wheelBody = that.wheels[i]
+                    wheelBody.position.copy(t.position)
+                    wheelBody.quaternion.copy(t.quaternion)
+                }
+            })
         } );
     }
 

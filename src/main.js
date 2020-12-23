@@ -12,6 +12,8 @@ import * as CANNON from 'cannon-es';
 import cannonDebugger from 'cannon-es-debugger'
 import Time from './utils/time.js';
 
+CANNON.eq
+
 class Application {
 	constructor() {
 		this.scene = new THREE.Scene();
@@ -53,22 +55,10 @@ class Application {
 					position: new CANNON.Vec3(0, 0, 0)
 				})
 			},
-			sphere:{
-				model: new THREE.Mesh( 
-					new THREE.CylinderGeometry( 10, 50, 200, 24),
-					new THREE.MeshLambertMaterial( {color: 0xffff00} )
-					),
-				body: new CANNON.Body({
-					mass: 50000, // kg
-					position: new CANNON.Vec3(200, 200, 0), // m
-					shape: new CANNON.Box(new CANNON.Vec3(50,100,50))
-				})
-			},
 		}
-		this.cannon.world.gravity = new CANNON.Vec3(0, -98, 0);
-		this.cannon.world.solver.iterations = 10;
-		this.cannon.world.defaultContactMaterial.friction = 0.2;
-		this.cannon.world.addBody(this.cannon.sphere.body);
+		this.cannon.world.gravity = new CANNON.Vec3(0, 0, -10);
+		this.cannon.world.solver.iterations = 1;
+		this.cannon.world.defaultContactMaterial.friction = 0.1;
 		
         var groundMaterial = new CANNON.Material('groundMaterial')
         var wheelMaterial = new CANNON.Material('wheelMaterial')
@@ -76,19 +66,20 @@ class Application {
           wheelMaterial,
           groundMaterial,
           {
-            friction: 0.1,
+            friction: 0.3,
             restitution: 0,
-            contactEquationStiffness: 1000,
+			contactEquationStiffness: 100,
+			frictionEquationStiffness: 100
           }
 		))
         // We must add the contact materials to the world
         this.cannon.world.addContactMaterial(wheelGroundContactMaterial)
 
 		
-		this.cannon.floor.body.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI * 0.5);
+		//this.cannon.floor.body.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI * 0.5);
 		this.cannon.floor.body.material = groundMaterial;
 		this.cannon.world.addBody(this.cannon.floor.body);
-		cannonDebugger(this.scene, this.cannon.world.bodies)
+		//cannonDebugger(this.scene, this.cannon.world.bodies)
 		
 		this.world = {
 			sun: new Sun(),
@@ -116,11 +107,9 @@ class Application {
 			this.camera.updatePosition(this.world.bus);
 			this.renderer.r.render( this.scene, this.camera.c );
 			this.animateOption.delta = this.animateOption.delta % this.animateOption.interval;
-			this.cannon.sphere.model.position.copy(this.cannon.sphere.body.position)
-			this.cannon.sphere.model.quaternion.copy(this.cannon.sphere.body.quaternion)
 			if(this.cannon.lastTime !== undefined && this.cannon.world !== undefined){
 				var dt = (this.cannon.time - this.cannon.lastTime) / 1000;
-				this.cannon.world.step(this.animateOption.delta);
+				this.cannon.world.step(this.animateOption.delta, 0.025);
 			}
 	   }
    };
@@ -132,58 +121,72 @@ class Application {
 		this.scene.add(this.world.sun.light);
 		this.scene.add(this.world.sun.ambient);
 		this.scene.add(this.world.bus.container);
-
-		this.cannon.sphere.model.castShadow = true;
-		this.cannon.sphere.model.receiveShadow = true;
-		this.cannon.sphere.model.position.copy(this.cannon.sphere.body.position);
-		this.cannon.sphere.model.quaternion.copy(this.cannon.sphere.body.quaternion);
-		this.scene.add( this.cannon.sphere.model );
 	}
 
 	initControl() {
-		document.onkeydown = this.handlerControl;
-		document.onkeyup = this.handlerControl;
+		document.onkeydown = (event) => this.handlerControl(event, this);
+		document.onkeyup = (event) => this.handlerControl(event, this);
+		document.querySelector('.reset').addEventListener('click', (event) => this.handlerReset(event, this));
 	}
 
-	handlerControl(event) {
-		const that = app;
+	handlerReset(event, that) {
+		that.world.bus.reset();
+	}
+
+	handlerControl(event,that) {
 		const busControl = that.world.bus.vehicule;
-        const up = event.type == 'keyup'
-		if (!up && event.type !== 'keydown') return;
+		const up = event.type == 'keyup';
 		
-		var maxSteerVal = Math.PI / 8;
+		var maxSteerVal = 0.5;
 		var maxSpeed = 10;
-		var maxForce = 1000000;
+		var maxForce = 1000;
 		
-		console.log(event.code);
+        busControl.setBrake(0, 0)
+        busControl.setBrake(0, 1)
+        busControl.setBrake(0, 2)
+        busControl.setBrake(0, 3)
+
+
+		//console.log(event.code);
 
 		switch (event.code) {
 			case 'KeyA':
 			case 'ArrowLeft':
+				if (!up && event.type !== 'keydown') return;
+				busControl.setSteeringValue(up ? 0 : maxSteerVal, 0)
 				busControl.setSteeringValue(up ? 0 : maxSteerVal, 1)
-				busControl.setSteeringValue(up ? 0 : maxSteerVal, 2)
+				break;
 			case 'KeyD':
 			case 'ArrowRight':
+				if (!up && event.type !== 'keydown') return;
+				busControl.setSteeringValue(up ? 0 : -maxSteerVal, 0)
 				busControl.setSteeringValue(up ? 0 : -maxSteerVal, 1)
-				busControl.setSteeringValue(up ? 0 : -maxSteerVal, 2)
 				break;
 			case 'KeyW':
 			case 'ArrowUp':
-				busControl.setWheelForce(up ? 0 : -maxForce, 0)
-				busControl.setWheelForce(up ? 0 : -maxForce, 3)
+				if (!up && event.type !== 'keydown') return;
+				busControl.applyEngineForce(up ? 0 : -maxForce, 2)
+				busControl.applyEngineForce(up ? 0 : -maxForce, 3)
 				break;
 			case 'KeyS':
 			case 'ArrowDown':
-				busControl.setWheelForce(up ? 0 : maxForce / 2, 0)
-				busControl.setWheelForce(up ? 0 : maxForce / 2, 3)
+				if (!up && event.type !== 'keydown') return;
+				busControl.applyEngineForce(up ? 0 : maxForce, 2)
+				busControl.applyEngineForce(up ? 0 : maxForce, 3)
 				break;
 			case 'Space':
 			case 'ShiftRight':
+				if (!up && event.type !== 'keydown') return;
 				that.world.bus.takeOff();
 				break;
 			case 'ConstrolLeft':
 			case 'ControlRight':
+				if (!up && event.type !== 'keydown') return;
 				that.world.bus.down();
+			break;
+			case 'Delete':
+				if (!up) return;
+				that.world.bus.reset();
 			break;
 		}
 	}
