@@ -91,12 +91,12 @@ export default class Bus {
         
 
         const playbackSpeed = Math.min(
-            (Math.abs(this.vehicule.currentVehicleSpeedKmHour)+1)/3,
-            10
+            (Math.abs(this.vehicule.currentVehicleSpeedKmHour)+5)/10,
+            2
             );
         this.engineAudio.playbackRate = playbackSpeed;
 
-        console.log(this.chassisBody.collisionFilterMask );
+        console.log(playbackSpeed );
 
         if(this.rotor) {
             const onGround = this.container.position.y > -25 ? 0.05 : 0;

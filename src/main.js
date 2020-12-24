@@ -121,6 +121,20 @@ class Application {
 		this.scene.add(this.world.sun.light);
 		this.scene.add(this.world.sun.ambient);
 		this.scene.add(this.world.bus.container);
+
+
+		let that = this;
+		window.addEventListener('resize',function(){
+			that.resize()
+		}, false);
+	}
+
+	resize() {
+		console.log(this.camera.c);
+		this.camera.c.aspect = window.innerWidth / window.innerHeight;
+		this.camera.c.updateProjectionMatrix();
+
+		this.renderer.r.setSize(window.innerWidth, window.innerHeight);
 	}
 
 	initControl() {
