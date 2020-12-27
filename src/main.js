@@ -12,8 +12,6 @@ import * as CANNON from 'cannon-es';
 import cannonDebugger from 'cannon-es-debugger'
 import Time from './utils/time.js';
 
-CANNON.eq
-
 class Application {
 	constructor() {
 		this.scene = new THREE.Scene();
@@ -26,7 +24,6 @@ class Application {
 		this.stats = new Stats();
 		this.container.appendChild( this.stats.dom );
 
-
 		this.time = new Time();
 		
 		this.animateOption = {
@@ -34,6 +31,7 @@ class Application {
 			delta: 16,
 			interval: 1 / 60
 		};
+
 		this.control = {
 			loop: null,
 			loopSpeedState: false,
@@ -42,7 +40,7 @@ class Application {
 			loopRotate: null,
 			loopUpState: false,
 			loopUp: null,
-		}
+		};
 
 		this.cannon = {
 			lastTime: null,
@@ -75,7 +73,6 @@ class Application {
         // We must add the contact materials to the world
         this.cannon.world.addContactMaterial(wheelGroundContactMaterial)
 
-		
 		//this.cannon.floor.body.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI * 0.5);
 		this.cannon.floor.body.material = groundMaterial;
 		this.cannon.world.addBody(this.cannon.floor.body);
@@ -115,7 +112,7 @@ class Application {
    };
 
 	initScene() {
-		this.scene.fog = new THREE.FogExp2(0x66c1d4, 0.00025)
+		this.scene.fog = new THREE.FogExp2(0x66c1d4, 0.005)
 
 		this.scene.add(this.world.road.container);
 		this.scene.add(this.world.sun.light);
@@ -127,10 +124,14 @@ class Application {
 		window.addEventListener('resize',function(){
 			that.resize()
 		}, false);
+
+		document.querySelector('button#start').addEventListener('click', function(){
+			that.handlerStart(event, that);
+			document.querySelector('button#start').style.display = 'none';
+		}, false)
 	}
 
 	resize() {
-		console.log(this.camera.c);
 		this.camera.c.aspect = window.innerWidth / window.innerHeight;
 		this.camera.c.updateProjectionMatrix();
 
@@ -144,6 +145,11 @@ class Application {
 	}
 
 	handlerReset(event, that) {
+		that.world.bus.reset();
+	}
+
+	handlerStart(event, that) {
+		that.scene.add(that.world.bus.container);
 		that.world.bus.reset();
 	}
 
@@ -161,7 +167,7 @@ class Application {
         busControl.setBrake(0, 3)
 
 
-		//console.log(event.code);
+		console.log(event.code);
 
 		switch (event.code) {
 			case 'KeyA':

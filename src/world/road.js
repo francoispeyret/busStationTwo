@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import Tree from "./tree.js";
+import Jumper from "./jumper.js";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import * as CANNON from 'cannon-es';
 
@@ -18,12 +18,48 @@ export default class Objects {
         // Objects
         this.tirets = [];
         this.trees  = [];
+        this.clouds = [];
+        this.jumpers = [];
 
-
+        this.setClouds();
         this.setModel();
 
         this.bodies = [];
     }
+
+    setClouds() {
+        
+        var loader = new FBXLoader();
+        var that = this;
+        loader.load( './models/cloud.fbx', function ( object ) {
+            
+            object.traverse( function ( child ) {
+                if ( child.isMesh ) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            } );
+            //that.container.add( object );
+            //that.clouds.push( object );
+            const wind = new THREE.Vector3(
+                ((Math.random()-.5)/10)+0.0001,
+                ((Math.random()-.5)/10)+0.0001,
+                0
+            );
+            for(let c = 0; c < 30; c++) {
+                let objectItem = object.clone();
+                const x = Math.random() * 400 - 200;
+                const y = Math.random() * 400 - 200;
+                const z = Math.random() * 60 + 10;
+                objectItem.position.set( x, y, z );
+                objectItem.velocity = wind;
+                that.container.add( objectItem );
+                that.clouds.push( objectItem );
+            }
+        });
+
+    }
+
 
     
     setModel() {
@@ -41,6 +77,47 @@ export default class Objects {
             } );
             that.container.add( object );
         } );
+
+
+        this.jumpers.push(new Jumper(
+            this.container,
+            this.cannon,
+            new CANNON.Vec3(20, 7.5, -1),//new CANNON.Vec3(20,35, -1 ),
+            {
+                vec: new CANNON.Vec3(0, 0, 1),
+                val: Math.PI*1.6
+            }
+        ));
+        this.jumpers.push(new Jumper(
+            this.container,
+            this.cannon,
+            new CANNON.Vec3(29.5, 10, -1),//new CANNON.Vec3(20,35, -1 ),
+            {
+                vec: new CANNON.Vec3(0, 0, 1),
+                val: Math.PI*2.6
+            }
+        ));
+
+        /*var jumperShape = new CANNON.Box(new CANNON.Vec3(4,4,1));
+        var jumberBody =  new CANNON.Body({
+            mass: 0, // kg
+            position: new CANNON.Vec3(20,35, -1 ), // m
+            allowSleep: true
+        });
+        
+        jumberBody.addShape(jumperShape);
+        jumberBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI/16);
+        this.cannon.world.addBody(jumberBody);
+
+        var jumberModel = new THREE.BoxGeometry(8,8,2);
+        var jumberMaterial = new THREE.MeshPhongMaterial( {color: 0x00ff66} );
+        var jumber = new THREE.Mesh(jumberModel, jumberMaterial);
+        jumber.castShadow = true;
+        jumber.receiveShadow = true;
+        jumber.position.copy(jumberBody.position);
+        jumber.quaternion.copy(jumberBody.quaternion);
+
+        this.container.add(jumber);*/
     }
 
     addModelToBodyCannon(model) {
@@ -144,6 +221,21 @@ export default class Objects {
             }
             tree.model.quaternion.copy(tree.body.quaternion);
             tree.model.position.copy(tree.body.position);
+        }
+
+        const origin = new THREE.Vector3(0,0,50);
+        for(let cloud of this.clouds) {
+            //cloud.position.x += 0.01;
+            cloud.position.add(cloud.velocity)
+            if(cloud.position.distanceTo(origin) > 300) {
+                cloud.position.copy(
+                    new THREE.Vector3(
+                        -cloud.position.x,
+                        -cloud.position.y,
+                        cloud.position.z
+                    )
+                )
+            }
         }
     }
 }

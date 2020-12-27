@@ -6,7 +6,7 @@ export default class Sun {
         this.animationClock = 0;
 
         this.light = new THREE.SpotLight( 0xfefefe, 1, 0, Math.PI / 4, 0.3 );
-        this.light.position.set( 150, 150, 0 );
+        this.light.position.set( 300, 300, 0 );
         this.light.target.position.set( 0, 0, 0 );
         this.light.castShadow = true;
         this.light.shadow.radius = 2;
@@ -21,19 +21,13 @@ export default class Sun {
     }
 
     animate (bus) {
-        if(this.light.position.y > -300 && this.light.position.y < 750) {
-            this.animationClock += .3;
-        } else if(this.light.position.y > 500) {
-            this.animationClock += .025;
-        } else {
-            this.animationClock += .15;
-        }
-        let x = -Math.floor(Math.sin(THREE.Math.degToRad(this.animationClock)) * 150);
-        let y = Math.floor(Math.cos(THREE.Math.degToRad(this.animationClock)) * 150);
+        this.animationClock += .05;
+        let x = -Math.floor(Math.sin(THREE.Math.degToRad(this.animationClock)) * 300);
+        let y = Math.floor(Math.cos(THREE.Math.degToRad(this.animationClock)) * 300);
         this.light.position.set(
             bus.container.position.x + x,
             bus.container.position.y + y,
-            bus.container.position.z + 150
+            bus.container.position.z + 300
             );
         this.light.target = bus.container;
     }

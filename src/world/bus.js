@@ -1,14 +1,13 @@
 import * as THREE from "three";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import * as CANNON from 'cannon-es';
+import Tree from "./tree";
 
 export default class Bus {
     constructor(cannon) {
-
         this.cannon = cannon;
 
         this.time = 0;
-
         this.size = {
             w: 70,
             d: 200,
@@ -16,16 +15,17 @@ export default class Bus {
         };
 
         this.chassisShape = new CANNON.Box(new CANNON.Vec3(2, 1, 1.2));
+        
         this.chassisBody = new CANNON.Body({ mass: 1000 });
-        this.chassisBody.addShape(this.chassisShape, new CANNON.Vec3())
-        this.chassisBody.position.set(-0,0,5);
-        this.chassisBody.angularVelocity.set(0, 0, 8.25)
+        this.chassisBody.addShape(this.chassisShape, new CANNON.Vec3());
+        this.chassisBody.position.set(10, 0, 5);
+        this.chassisBody.angularVelocity.set(0, 0, 8.25);
 
         this.vehicule = new CANNON.RaycastVehicle({
             chassisBody: this.chassisBody
         });
 
-        var options = {
+        let options = {
             radius: 0.5,
             directionLocal: new CANNON.Vec3(0, 0, -1),
             suspensionStiffness: 15,
@@ -40,21 +40,20 @@ export default class Bus {
             maxSuspensionTravel: 0.3,
             customSlidingRotationalSpeed: -5,
             useCustomSlidingRotationalSpeed: true,
-          }
-  
+        };
 
         let Zaxe = -1.2;
 
-        options.chassisConnectionPointLocal.set(1, 1, Zaxe);
+        options.chassisConnectionPointLocal.set(1.3, 1, Zaxe);
         this.vehicule.addWheel(options);
 
-        options.chassisConnectionPointLocal.set(1, -1, Zaxe);
+        options.chassisConnectionPointLocal.set(1.3, -1, Zaxe);
         this.vehicule.addWheel(options);
 
-        options.chassisConnectionPointLocal.set(-1, 1, Zaxe);
+        options.chassisConnectionPointLocal.set(-1.3, 1, Zaxe);
         this.vehicule.addWheel(options);
 
-        options.chassisConnectionPointLocal.set(-1, -1, Zaxe);
+        options.chassisConnectionPointLocal.set(-1.3, -1, Zaxe);
         this.vehicule.addWheel(options);
 
         this.wheels = [];
@@ -72,7 +71,6 @@ export default class Bus {
         this.container.add(this.bus);
 
         this.rotor = null;
-
         this.engineAudio = new Audio('./engine_loop_3.mp3');
 
         this.engineAudio.loop = true;
@@ -80,34 +78,54 @@ export default class Bus {
         this.engineAudio.loopStart = 0.1;
         //this.engineAudio.play();
 
+        this.kmhEl = document.querySelector('.kmh > .val');
+
+        this.hitsAudio = [
+            new Audio('./hit1.mp3'),
+            new Audio('./hit2.mp3'),
+            new Audio('./hit3.mp3')
+        ];
+
+        this.chassisBody.addEventListener('collide', (e) => this.hit(e,this))
+
+    }
+
+    hit(e, that) {
+        const indexRandom = Math.floor(Math.random() * this.hitsAudio.length);
+        that.hitsAudio[indexRandom].play();
     }
 
     animate() {
         this.time++;
+
         this.container.position.copy(this.chassisBody.position);
         this.container.quaternion.copy(this.chassisBody.quaternion);
-        //this.bus.rotation.x = -this.vel.value/20 * ((this.container.position.y + 25)/this.maxPosY);
-        //this.container.rotation.y = -this.angle;        
-        
 
-        const playbackSpeed = Math.min(
-            (Math.abs(this.vehicule.currentVehicleSpeedKmHour)+5)/10,
-            2
-            );
+        // gestion de la position si trop loin dans la map (boucle)
+        const distance = this.container.position.distanceTo(new CANNON.Vec3(0,0,0))
+        if(distance > 250) {
+            this.chassisBody.position.copy(
+                new CANNON.Vec3(
+                    -this.chassisBody.position.x,
+                    -this.chassisBody.position.y,
+                    this.chassisBody.position.z
+                    )
+            )
+        }      
+
+        const playbackSpeed = Math.min((Math.abs(this.vehicule.currentVehicleSpeedKmHour)+5)/10, 2);
         this.engineAudio.playbackRate = playbackSpeed;
-
-        console.log(playbackSpeed );
+        
+        // display speed in html
+        this.kmhEl.innerHTML = Math.floor(Math.abs(this.vehicule.currentVehicleSpeedKmHour));
 
         if(this.rotor) {
-            const onGround = this.container.position.y > -25 ? 0.05 : 0;
-            this.rotor.rotation.y -= Math.sin(0.05 + onGround + (this.container.position.y / 2500));
+            this.rotor.rotation.y -= Math.sin(0.05 + (this.container.position.z / 50));
         }
-        
     }
 
     takeOff() {
-        //console.log(this.chassisBody);
-        //this.chassisBody.applyLocalImpulse(new CANNON.Vec3(0,1000,0), new CANNON.Vec3(0,0,0))
+        this.chassisBody.applyLocalImpulse(new CANNON.Vec3(0,0,600), new CANNON.Vec3(0,0,0))
     }
 
     down() {
@@ -118,7 +136,7 @@ export default class Bus {
 
     reset() {
         this.engineAudio.play();
-        this.vehicule.chassisBody.position.z = 5;
+        this.vehicule.chassisBody.position.set(10,0,5)
         this.chassisBody.angularVelocity.set(0, 0, 8.25)
         this.vehicule.chassisBody.quaternion.copy(new CANNON.Quaternion());
     }
@@ -127,8 +145,6 @@ export default class Bus {
         var loader = new FBXLoader();
         var that = this;
         var mesh;
-
-        var axisWidth = 70;
 
         loader.load( './models/bus2.fbx', function ( object ) {
             object.traverse( function ( child ) {
@@ -154,8 +170,8 @@ export default class Bus {
                     var q = new CANNON.Quaternion();
                     q.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
                     wheelBody.addShape(cylinderShape, new CANNON.Vec3(), q);
-                    that.wheels.push(wheelBody);
-                    that.cannon.world.addBody(wheelBody);
+                    that.wheels.push (wheelBody );
+                    that.cannon.world.addBody( wheelBody );
                 }
                 if ( child.isMesh ) {
                     child.castShadow = true;
@@ -176,8 +192,8 @@ export default class Bus {
                     wheelBody.position.copy(t.position)
                     wheelBody.quaternion.copy(t.quaternion)
                 }
-            })
-        } );
+            });
+        });
     }
 
 }

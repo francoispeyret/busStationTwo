@@ -5,6 +5,7 @@
 
 html {
     overflow: hidden;
+    font-family: sans-serif;
 }
 
 canvas {
@@ -33,6 +34,48 @@ canvas {
     animation: rotate ease 0.5s;
 }
 
+#start {
+    position: fixed;
+    z-index: 10;
+    left: calc(50% - 50px);
+    top: calc(50% - 50px);
+    appearance: none;
+    border: 0;
+    background: transparent;
+    filter: drop-shadow(0 15px 12px rgba(0,0,0,0.5));
+    cursor: pointer;
+    display: none;
+}
+#start:active,
+#start:focus,
+#start:hover {
+    outline: none;
+    border: 0;
+}
+#start:hover svg {
+    animation: scale ease 0.5s;
+}
+
+.kmh {
+    position: fixed;
+    z-index: 5;
+    right: 20px;
+    bottom: 20px;
+    font-size: 1vw;
+    color: #fff;
+}
+.kmh strong {
+    font-size: 3vw;
+}
+
+@keyframes scale {
+    0%,100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
 @keyframes rotate {
     0% {
         transform: rotate(0deg);
