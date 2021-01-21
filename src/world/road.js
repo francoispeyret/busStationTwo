@@ -65,7 +65,7 @@ export default class Objects {
     setModel() {
         var loader = new FBXLoader();
         var that = this;
-        loader.load( './models/map4.fbx', function ( object ) {
+        loader.load( './models/map6.fbx', function ( object ) {
             object.position.z = 0;
             //object.rotation.x = Math.PI/2;
             object.traverse( function ( child ) {
@@ -77,47 +77,6 @@ export default class Objects {
             } );
             that.container.add( object );
         } );
-
-
-        this.jumpers.push(new Jumper(
-            this.container,
-            this.cannon,
-            new CANNON.Vec3(20, 7.5, -1),//new CANNON.Vec3(20,35, -1 ),
-            {
-                vec: new CANNON.Vec3(0, 0, 1),
-                val: Math.PI*1.6
-            }
-        ));
-        this.jumpers.push(new Jumper(
-            this.container,
-            this.cannon,
-            new CANNON.Vec3(29.5, 10, -1),//new CANNON.Vec3(20,35, -1 ),
-            {
-                vec: new CANNON.Vec3(0, 0, 1),
-                val: Math.PI*2.6
-            }
-        ));
-
-        /*var jumperShape = new CANNON.Box(new CANNON.Vec3(4,4,1));
-        var jumberBody =  new CANNON.Body({
-            mass: 0, // kg
-            position: new CANNON.Vec3(20,35, -1 ), // m
-            allowSleep: true
-        });
-        
-        jumberBody.addShape(jumperShape);
-        jumberBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI/16);
-        this.cannon.world.addBody(jumberBody);
-
-        var jumberModel = new THREE.BoxGeometry(8,8,2);
-        var jumberMaterial = new THREE.MeshPhongMaterial( {color: 0x00ff66} );
-        var jumber = new THREE.Mesh(jumberModel, jumberMaterial);
-        jumber.castShadow = true;
-        jumber.receiveShadow = true;
-        jumber.position.copy(jumberBody.position);
-        jumber.quaternion.copy(jumberBody.quaternion);
-
-        this.container.add(jumber);*/
     }
 
     addModelToBodyCannon(model) {
@@ -196,6 +155,19 @@ export default class Objects {
             barres.addShape(new CANNON.Box(barreShapeCoord), new CANNON.Vec3(-11.8,.5, 0));
             barres.linearDamping = 0; 
             this.cannon.world.addBody(barres);
+        }
+        if(model.name.indexOf('jump') > -1) {
+            let jump =  new CANNON.Body({
+                mass: 0, // kg
+                position: new CANNON.Vec3(model.position.x,model.position.y, model.position.z), // m
+                allowSleep: true,
+            });
+            let barreShapeCoord = new CANNON.Vec3(model.scale.x, model.scale.y, model.scale.z);
+            console.log(model);
+            jump.addShape(new CANNON.Box(barreShapeCoord));
+            jump.linearDamping = 0;
+            jump.quaternion.copy(model.quaternion);
+            this.cannon.world.addBody(jump);
         }
 
 

@@ -146,7 +146,7 @@ export default class Bus {
         var that = this;
         var mesh;
 
-        loader.load( './models/bus2.fbx', function ( object ) {
+        loader.load( './models/bus3.fbx', function ( object ) {
             object.traverse( function ( child ) {
                 if(child.name == 'lamp1' || child.name == 'lamp2') {
                     let lampMaterail = new THREE.MeshLambertMaterial({color: 0x000000, emissive: 0xffe6a5})

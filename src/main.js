@@ -10,7 +10,6 @@ import { GUI } from '../node_modules/three/examples/jsm/libs/dat.gui.module.js';
 
 import * as CANNON from 'cannon-es';
 import cannonDebugger from 'cannon-es-debugger'
-import Time from './utils/time.js';
 
 class Application {
 	constructor() {
@@ -24,11 +23,11 @@ class Application {
 		this.stats = new Stats();
 		this.container.appendChild( this.stats.dom );
 
-		this.time = new Time();
 		
 		this.animateOption = {
 			clock: new THREE.Clock(),
-			delta: 16,
+			delta: 0,
+			oldElapsedTime: 0,
 			interval: 1 / 60
 		};
 
@@ -76,7 +75,7 @@ class Application {
 		//this.cannon.floor.body.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI * 0.5);
 		this.cannon.floor.body.material = groundMaterial;
 		this.cannon.world.addBody(this.cannon.floor.body);
-		//cannonDebugger(this.scene, this.cannon.world.bodies)
+		cannonDebugger(this.scene, this.cannon.world.bodies)
 		
 		this.world = {
 			sun: new Sun(),
@@ -91,24 +90,21 @@ class Application {
 	}
 
 	animate() {
-		var fixedTimeStep = 1.0 / 60.0; // seconds
-		var maxSubSteps = 1;
+
+		const elapsedTime = this.animateOption.clock.getElapsedTime();
+		this.animateOption.delta = elapsedTime - this.animateOption.oldElapsedTime;
+		this.animateOption.oldElapsedTime = elapsedTime;
+
 		window.requestAnimationFrame( this.animate );
 		this.stats.update();
-		this.cannon.lastTime = this.cannon.time;
-		this.animateOption.delta += this.animateOption.clock.getDelta();
-		if (this.animateOption.delta  > this.animateOption.interval) {
-			this.world.sun.animate(this.world.bus);
-			this.world.bus.animate(this.world.sun);
-			this.world.road.animate(this.world.bus);
-			this.camera.updatePosition(this.world.bus);
-			this.renderer.r.render( this.scene, this.camera.c );
-			this.animateOption.delta = this.animateOption.delta % this.animateOption.interval;
-			if(this.cannon.lastTime !== undefined && this.cannon.world !== undefined){
-				var dt = (this.cannon.time - this.cannon.lastTime) / 1000;
-				this.cannon.world.step(this.animateOption.delta, 0.025);
-			}
-	   }
+		this.world.sun.animate(this.world.bus);
+		this.world.bus.animate(this.world.sun);
+		this.world.road.animate(this.world.bus);
+		this.camera.updatePosition(this.world.bus);
+		this.renderer.r.render( this.scene, this.camera.c );
+		if(this.cannon.world !== undefined){
+			this.cannon.world.step(1/60,this.animateOption.delta, 0.005);
+		}
    };
 
 	initScene() {
