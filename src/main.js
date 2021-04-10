@@ -75,7 +75,7 @@ class Application {
 		//this.cannon.floor.body.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI * 0.5);
 		this.cannon.floor.body.material = groundMaterial;
 		this.cannon.world.addBody(this.cannon.floor.body);
-		cannonDebugger(this.scene, this.cannon.world.bodies)
+		//cannonDebugger(this.scene, this.cannon.world.bodies)
 		
 		this.world = {
 			sun: new Sun(),
